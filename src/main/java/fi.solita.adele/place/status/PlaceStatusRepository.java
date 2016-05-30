@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
@@ -27,15 +28,17 @@ public class PlaceStatusRepository {
     @Resource
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    @Transactional
     public Optional<PlaceStatus> getCurrentStatusForPlace(final int placeId) {
         return getCurrentStatusForPlaces(Optional.of(new Integer[] {placeId})).stream().findFirst();
     }
 
+    @Transactional
     public List<PlaceStatus> getCurrentStatusForAllPlaces() {
         return getCurrentStatusForPlaces(Optional.empty());
     }
 
-    public List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds) {
+    private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds) {
         final MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("types", Arrays.asList(EventType.occupied.toString(), EventType.movement.toString()));
 
