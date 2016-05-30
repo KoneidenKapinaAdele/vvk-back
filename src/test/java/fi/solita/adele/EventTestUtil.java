@@ -65,7 +65,7 @@ public class EventTestUtil {
     }
 
     public ResponseEntity<Integer> addEvent(Integer deviceId, Integer placeId, LocalDateTime time, Double value) {
-        return addEvent(deviceId, placeId, time, EventType.occupied.toString(), value);
+        return addEvent(deviceId, placeId, time, EventType.movement.toString(), value);
     }
 
     public ResponseEntity<Integer> addEvent(Integer deviceId, Integer placeId, LocalDateTime time, String type, Double value) {

@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -48,19 +49,17 @@ public class UsageStatsControllerTest {
         return "http://localhost:" + port + suffix;
     }
 
-    private UsageStats getUsageStats(Optional<LocalDateTime> starting,
-                                     Optional<LocalDateTime> ending,
+    private UsageStats getUsageStats(LocalDateTime starting,
+                                     LocalDateTime ending,
                                      Optional<Integer[]> device_id,
-                                     Optional<Integer[]> place_id,
-                                     Optional<EventType> type) {
+                                     Optional<Integer[]> place_id) {
 
         UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(url("/v1/query/usagestats"));
 
-        starting.ifPresent(v -> uri.queryParam("starting", v));
-        ending.ifPresent(v -> uri.queryParam("ending", v));
+        uri.queryParam("starting", starting);
+        uri.queryParam("ending", ending);
         device_id.map(Arrays::asList).orElse(new ArrayList<>()).forEach(v -> uri.queryParam("device_id", v));
         place_id.map(Arrays::asList).orElse(new ArrayList<>()).forEach(v -> uri.queryParam("place_id", v));
-        type.ifPresent(v -> uri.queryParam("type", v));
 
         return restTemplate.getForObject(uri.build().toUri(), UsageStats.class);
     }
@@ -78,29 +77,59 @@ public class UsageStatsControllerTest {
         eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.now().plusDays(2), FREE);
 
         UsageStats usageStats = getUsageStats(
-                Optional.of(LocalDateTime.now().minusDays(1)),
-                Optional.of(LocalDateTime.now().plusDays(1)),
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
                 Optional.empty(),
-                Optional.of(new Integer[] {placeId}),
-                Optional.empty());
+                Optional.of(new Integer[] {placeId}));
 
-        assertEquals(((double)3/4), usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
-        assertEquals(EventType.occupied, usageStats.getType());
+        assertEquals(0.0625d, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
+        assertEquals(EventType.movement, usageStats.getType());
     }
 
     @Test
-    @Ignore
-    public void should_handle_period_with_no_event() {
+    public void should_calculate_usage_stats_for_a_place_single_day() {
+        int placeId = placeTestUtil.addPlace();
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.of(2016, Month.MAY, 30, 0, 0, 0, 0), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.of(2016, Month.MAY, 30, 12, 0, 0, 0), FREE);
+
+        UsageStats usageStats = getUsageStats(
+                LocalDateTime.of(2016, Month.MAY, 30, 0, 0, 0, 0),
+                LocalDateTime.of(2016, Month.MAY, 30, 23, 59, 59, 999),
+                Optional.empty(),
+                Optional.of(new Integer[] {placeId}));
+
+        assertEquals(0.5d, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
+        assertEquals(EventType.movement, usageStats.getType());
+    }
+
+    @Test
+    public void should_handle_period_with_no_events() {
+        int placeId = placeTestUtil.addPlace();
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.now().minusDays(2), OCCUPIED);
+
+        UsageStats usageStats = getUsageStats(
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
+                Optional.empty(),
+                Optional.of(new Integer[] {placeId}));
+
+        assertEquals(OCCUPIED, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
+        assertEquals(EventType.movement, usageStats.getType());
+    }
+
+    @Test
+    public void should_handle_place_with_no_events() {
         int placeId = placeTestUtil.addPlace();
 
         UsageStats usageStats = getUsageStats(
-                Optional.of(LocalDateTime.now().minusDays(1)),
-                Optional.of(LocalDateTime.now().plusDays(1)),
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
                 Optional.empty(),
-                Optional.of(new Integer[] {placeId}),
-                Optional.empty());
+                Optional.of(new Integer[] {placeId}));
 
-        assertEquals(0.0, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
-        assertEquals(EventType.occupied, usageStats.getType());
+        assertEquals(FREE, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
+        assertEquals(EventType.movement, usageStats.getType());
     }
 }

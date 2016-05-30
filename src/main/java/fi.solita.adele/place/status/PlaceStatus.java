@@ -1,16 +1,16 @@
 package fi.solita.adele.place.status;
 
 public class PlaceStatus {
-    private long place_id;
+    private int place_id;
     private double latitude;
     private double longitude;
     private boolean occupied;
 
-    public long getPlace_id() {
+    public int getPlace_id() {
         return place_id;
     }
 
-    public PlaceStatus setPlace_id(long place_id) {
+    public PlaceStatus setPlace_id(int place_id) {
         this.place_id = place_id;
         return this;
     }
