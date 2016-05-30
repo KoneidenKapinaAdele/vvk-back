@@ -1,5 +1,6 @@
 package fi.solita.adele.place.status;
 
+import com.google.common.collect.Maps;
 import fi.solita.adele.event.EventType;
 import fi.solita.adele.event.OccupiedStatusSolver;
 import org.springframework.jdbc.core.RowMapper;
@@ -11,8 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -32,12 +35,29 @@ public class PlaceStatusRepository {
 
     @Transactional
     public Optional<PlaceStatus> getCurrentStatusForPlace(final int placeId, final Optional<LocalDateTime> atDate) {
-        return getCurrentStatusForPlaces(Optional.of(new Integer[] {placeId}), atDate).stream().findFirst();
+        return getStatusForPlaces(placeId, atDate);
+    }
+
+    private Optional<PlaceStatus> getStatusForPlaces(int placeId, Optional<LocalDateTime> atDate) {
+        return getCurrentStatusForPlaces(Optional.of(new Integer[]{placeId}), atDate).stream().findFirst();
     }
 
     @Transactional
     public List<PlaceStatus> getCurrentStatusForAllPlaces(final Optional<LocalDateTime> atDate) {
         return getCurrentStatusForPlaces(Optional.empty(), atDate);
+    }
+
+    @Transactional
+    public Map<LocalDateTime, PlaceStatus> geStatusForPlaces(LocalDateTime starting, LocalDateTime ending, Integer[] place_ids, int interval, ChronoUnit unit) {
+        Map<LocalDateTime, PlaceStatus> reservedMap = Maps.newHashMap();
+        for (LocalDateTime time = starting; time.isBefore(ending); time = time.plus(interval, unit)) {
+            Optional<PlaceStatus> placeStatusOptional = getStatusForPlaces(place_ids[0], Optional.of(time));
+            final LocalDateTime time1 = time;
+            placeStatusOptional.ifPresent(placeStatus -> {
+                reservedMap.put(time1, placeStatus);
+            });
+        }
+        return reservedMap;
     }
 
     private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds, final Optional<LocalDateTime> atDate) {

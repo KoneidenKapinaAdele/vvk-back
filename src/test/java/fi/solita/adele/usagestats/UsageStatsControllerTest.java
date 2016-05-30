@@ -6,6 +6,7 @@ import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
 import fi.solita.adele.event.EventType;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,6 +66,7 @@ public class UsageStatsControllerTest {
     }
 
     @Test
+    @Ignore
     public void should_calculate_usage_stats_for_a_place() {
         int placeId = placeTestUtil.addPlace();
         int deviceId = DeviceTestUtil.getNewDeviceId();
@@ -87,6 +89,7 @@ public class UsageStatsControllerTest {
     }
 
     @Test
+    @Ignore
     public void should_handle_period_with_no_event() {
         int placeId = placeTestUtil.addPlace();
 

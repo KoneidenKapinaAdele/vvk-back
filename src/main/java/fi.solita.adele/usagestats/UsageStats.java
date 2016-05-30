@@ -1,12 +1,18 @@
 package fi.solita.adele.usagestats;
 
 import fi.solita.adele.event.EventType;
+import lombok.AllArgsConstructor;
 import lombok.experimental.Builder;
 
 @Builder
+@AllArgsConstructor
 public class UsageStats {
     private EventType type;
     private double average;
+
+    public UsageStats() {
+
+    }
 
     public EventType getType() {
         return type;
