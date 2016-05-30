@@ -24,6 +24,7 @@ public class UsageStatsController {
                           @RequestParam(value = "device_id", required = false) Integer[] device_id,
                           @RequestParam(value = "place_id", required = false) Integer[] place_id,
                           @RequestParam(value = "type", required = false) Optional<EventType> type) {
-        return usageStatsRepository.getUsageStats(starting, ending, Optional.ofNullable(device_id), Optional.ofNullable(place_id), type);
+        return usageStatsRepository.getStats(starting, ending, Optional.ofNullable(device_id), Optional.ofNullable(
+                place_id), type);
     }
 }

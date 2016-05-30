@@ -42,13 +42,13 @@ public class PlaceStatusRepository {
     }
 
     @Transactional
-    public Map<LocalDateTime, Boolean> geStatusForPlaces(LocalDateTime starting, LocalDateTime ending, Integer[] place_ids, int interval, ChronoUnit unit) {
-        Map<LocalDateTime, Boolean> reservedMap = Maps.newHashMap();
+    public Map<LocalDateTime, PlaceStatus> geStatusForPlaces(LocalDateTime starting, LocalDateTime ending, Integer[] place_ids, int interval, ChronoUnit unit) {
+        Map<LocalDateTime, PlaceStatus> reservedMap = Maps.newHashMap();
         for (LocalDateTime time = starting; time.isBefore(ending); time = time.plus(interval, unit)) {
             Optional<PlaceStatus> placeStatusOptional = getStatusForPlace(Optional.of(place_ids), Optional.of(time));
             final LocalDateTime time1 = time;
             placeStatusOptional.ifPresent(placeStatus -> {
-                reservedMap.put(time1, placeStatus.isOccupied());
+                reservedMap.put(time1, placeStatus);
             });
         }
         return reservedMap;

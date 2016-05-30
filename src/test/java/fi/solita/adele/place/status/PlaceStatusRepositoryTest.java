@@ -51,16 +51,16 @@ public class PlaceStatusRepositoryTest {
         eventRepository.addEvent(generateEvent(MOVING, DEVICE_ID, PLACE_ID, START_TIME.plusSeconds(30), EVENT_TYPE));
         int interval = 5;
 
-        Map<LocalDateTime, Boolean> timeStatusMap = placeStatusRepository.geStatusForPlaces(START_TIME,
+        Map<LocalDateTime, PlaceStatus> timeStatusMap = placeStatusRepository.geStatusForPlaces(START_TIME,
                                                                                                       START_TIME.plusSeconds(30),
                                                                                                       new Integer[]{PLACE_ID},
                                                                                                       interval,
                                                                                                       ChronoUnit.SECONDS);
 
         assertEquals(timeStatusMap.size(), 6);
-        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(5)), false);
-        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(10)), true);
-        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(15)), true);
-        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(25)), false);
+        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(5)).isOccupied(), false);
+        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(10)).isOccupied(), true);
+        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(15)).isOccupied(), true);
+        assertEquals(timeStatusMap.get(START_TIME.plusSeconds(25)).isOccupied(), false);
     }
 }
