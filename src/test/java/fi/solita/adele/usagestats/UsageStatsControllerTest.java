@@ -1,6 +1,7 @@
 package fi.solita.adele.usagestats;
 
 import fi.solita.adele.App;
+import fi.solita.adele.DeviceTestUtil;
 import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
 import fi.solita.adele.event.EventType;
@@ -66,7 +67,7 @@ public class UsageStatsControllerTest {
     @Test
     public void should_calculate_usage_stats_for_a_place() {
         int placeId = placeTestUtil.addPlace();
-        int deviceId = 700;
+        int deviceId = DeviceTestUtil.getNewDeviceId();
         eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.now().minusDays(2), FREE);
         eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.now().minusHours(3), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, LocalDateTime.now().minusHours(2), OCCUPIED);

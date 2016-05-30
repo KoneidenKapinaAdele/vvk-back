@@ -1,6 +1,7 @@
 package fi.solita.adele.event;
 
 import fi.solita.adele.App;
+import fi.solita.adele.DeviceTestUtil;
 import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
 import org.junit.Before;
@@ -46,7 +47,7 @@ public class EventControllerTest {
         int placeId = placeTestUtil.addPlace();
 
         CreateEventCommand event = new CreateEventCommand();
-        event.setDevice_id(100);
+        event.setDevice_id(DeviceTestUtil.getNewDeviceId());
         event.setPlace_id(Optional.of(placeId));
         event.setTime(Optional.of(LocalDateTime.now()));
         event.setType(EventType.occupied);
@@ -90,23 +91,26 @@ public class EventControllerTest {
     @Test
     public void should_list_events_by_device_ids() {
         int placeId = placeTestUtil.addPlace();
+        int deviceId1 = DeviceTestUtil.getNewDeviceId();
+        int deviceId2 = DeviceTestUtil.getNewDeviceId();
+        int deviceId3 = DeviceTestUtil.getNewDeviceId();
 
         CreateEventCommand event1 = eventCommand(placeId);
-        event1.setDevice_id(1001);
+        event1.setDevice_id(deviceId1);
         int eventId1 = eventTestUtil.addEvent(event1);
 
         CreateEventCommand event2 = eventCommand(placeId);
-        event2.setDevice_id(1002);
+        event2.setDevice_id(deviceId2);
         int eventId2 = eventTestUtil.addEvent(event2);
 
         CreateEventCommand event3 = eventCommand(placeId);
-        event3.setDevice_id(1003);
+        event3.setDevice_id(deviceId3);
         int eventId3 = eventTestUtil.addEvent(event3);
 
         Set<Integer> eventIds = eventTestUtil.getAllEvents(
                 Optional.empty(),
                 Optional.empty(),
-                Optional.of(new Integer[] {1002, 1003}),
+                Optional.of(new Integer[] {deviceId2, deviceId3}),
                 Optional.empty(),
                 Optional.empty()
         ).stream().map(Event::getID).collect(Collectors.toSet());
@@ -175,7 +179,7 @@ public class EventControllerTest {
         int placeId = placeTestUtil.addPlace();
 
         CreateEventCommand event = new CreateEventCommand();
-        event.setDevice_id(100);
+        event.setDevice_id(DeviceTestUtil.getNewDeviceId());
         event.setPlace_id(Optional.of(placeId));
         event.setTime(Optional.of(LocalDateTime.now()));
         event.setType(EventType.occupied);
@@ -191,8 +195,11 @@ public class EventControllerTest {
         int placeId1 = placeTestUtil.addPlace();
         int placeId2 = placeTestUtil.addPlace();
 
+        int eventId1 = DeviceTestUtil.getNewDeviceId();
+        int eventId2 = DeviceTestUtil.getNewDeviceId();
+
         CreateEventCommand command1 = new CreateEventCommand();
-        command1.setDevice_id(200);
+        command1.setDevice_id(eventId1);
         command1.setPlace_id(Optional.of(placeId1));
         command1.setTime(Optional.of(LocalDateTime.now().minusDays(2)));
         command1.setType(EventType.occupied);
@@ -200,7 +207,7 @@ public class EventControllerTest {
         eventTestUtil.addEvent(command1);
 
         CreateEventCommand command2 = new CreateEventCommand();
-        command2.setDevice_id(200);
+        command2.setDevice_id(eventId2);
         command2.setPlace_id(Optional.of(placeId2));
         command2.setTime(Optional.of(LocalDateTime.now().minusDays(1)));
         command2.setType(EventType.occupied);
@@ -208,7 +215,7 @@ public class EventControllerTest {
         eventTestUtil.addEvent(command2);
 
         CreateEventCommand command3 = new CreateEventCommand();
-        command3.setDevice_id(200);
+        command3.setDevice_id(eventId2);
         command3.setPlace_id(Optional.empty());
         command3.setTime(Optional.of(LocalDateTime.now().plusDays(1)));
         command3.setType(EventType.occupied);
@@ -227,9 +234,10 @@ public class EventControllerTest {
     @Test
     public void should_not_add_new_event_if_there_is_no_previous_event_for_device() {
         placeTestUtil.addPlace();
+        int deviceId = DeviceTestUtil.getNewDeviceId();
 
         CreateEventCommand command1 = new CreateEventCommand();
-        command1.setDevice_id(300);
+        command1.setDevice_id(deviceId);
         command1.setPlace_id(Optional.empty());
         command1.setTime(Optional.of(LocalDateTime.now().minusDays(1)));
         command1.setType(EventType.occupied);
@@ -240,7 +248,7 @@ public class EventControllerTest {
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
-            assertEquals("No previous event for device 300", ex.getResponseBodyAsString());
+            assertEquals("No previous event for device " + deviceId, ex.getResponseBodyAsString());
         }
     }
 
@@ -249,7 +257,7 @@ public class EventControllerTest {
         int placeId = placeTestUtil.addPlace();
 
         CreateEventCommand command = new CreateEventCommand();
-        command.setDevice_id(100);
+        command.setDevice_id(DeviceTestUtil.getNewDeviceId());
         command.setPlace_id(Optional.of(placeId));
         command.setTime(Optional.empty());
         command.setType(EventType.occupied);
@@ -278,19 +286,20 @@ public class EventControllerTest {
 
     @Test
     public void should_not_add_new_event_with_missing_place_id() {
+        int deviceId = DeviceTestUtil.getNewDeviceId();
         try {
-            eventTestUtil.addEvent(600, null, LocalDateTime.now(), EventType.occupied.toString(), OCCUPIED);
+            eventTestUtil.addEvent(deviceId, null, LocalDateTime.now(), EventType.occupied.toString(), OCCUPIED);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
-            assertEquals("No previous event for device 600", ex.getResponseBodyAsString());
+            assertEquals("No previous event for device " + deviceId, ex.getResponseBodyAsString());
         }
     }
 
     @Test
     public void should_not_add_new_event_with_missing_type() {
         try {
-            eventTestUtil.addEvent(600, placeTestUtil.addPlace(), LocalDateTime.now(), null, OCCUPIED);
+            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), null, OCCUPIED);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -301,7 +310,7 @@ public class EventControllerTest {
     @Test
     public void should_not_add_new_event_with_unknown_type() {
         try {
-            eventTestUtil.addEvent(600, placeTestUtil.addPlace(), LocalDateTime.now(), "abc", OCCUPIED);
+            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), "abc", OCCUPIED);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -313,7 +322,7 @@ public class EventControllerTest {
     @Test
     public void should_not_add_new_event_with_missing_value() {
         try {
-            eventTestUtil.addEvent(600, placeTestUtil.addPlace(), LocalDateTime.now(), EventType.occupied.toString(), null);
+            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), EventType.occupied.toString(), null);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
