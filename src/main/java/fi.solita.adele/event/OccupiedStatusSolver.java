@@ -6,7 +6,9 @@ public class OccupiedStatusSolver {
         if(eventType == EventType.occupied) {
             return value >= 1.0;
         }
-        return false;
-        //throw new UnsolvableEventOccupiedStatus(eventType, value);
+        if(eventType == EventType.movement) {
+            return value >= 1.0;
+        }
+        throw new UnsolvableEventOccupiedStatus(eventType, value);
     }
 }
