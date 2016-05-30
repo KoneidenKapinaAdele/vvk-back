@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.sql.PreparedStatement;
@@ -39,6 +40,7 @@ public class EventRepository {
     @Resource
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    @Transactional
     public List<Event> all(final Optional<LocalDateTime> starting,
                            final Optional<LocalDateTime> ending,
                            final Optional<Integer[]> device_id,
@@ -80,6 +82,7 @@ public class EventRepository {
         return namedParameterJdbcTemplate.query(sql, params, eventRowMapper);
     }
 
+    @Transactional
     public int addEvent(final CreateEventCommand event) {
         EventValidator.validateCreate(event);
         final Optional<Integer> placeIdOptional = event.getPlace_id() != null ? event.getPlace_id() : Optional.empty();
@@ -102,11 +105,13 @@ public class EventRepository {
         return keyHolder.getKey().intValue();
     }
 
+    @Transactional
     public Event getEvent(final int id) {
         Object[] args = {id};
         return jdbcTemplate.queryForObject("select * from " + EVENT + " where id = ? ", args, eventRowMapper);
     }
 
+    @Transactional
     public int getLastPlaceIdForDeviceId(final int deviceId) {
         final String sql = "select place_id, max(time) " +
                 "from " + EVENT + " " +

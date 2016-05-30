@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.sql.PreparedStatement;
@@ -28,11 +29,13 @@ public class PlaceRepository {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    @Transactional
     public List<Place> allPlaces() {
         String sql = "select * from " + PLACE;
         return jdbcTemplate.query(sql, placeRowMapper);
     }
 
+    @Transactional
     public int addPlace(final CreatePlaceCommand place) {
         final KeyHolder keyHolder = new GeneratedKeyHolder();
         final String sql = "insert into " + PLACE + " (name, latitude, longitude) values (?, ?, ?)";
@@ -48,11 +51,13 @@ public class PlaceRepository {
         return keyHolder.getKey().intValue();
     }
 
+    @Transactional
     public Place getPlace(final int id) {
         Object[] args = {id};
         return jdbcTemplate.queryForObject("select * from " + PLACE + " where id = ? ", args, placeRowMapper);
     }
 
+    @Transactional
     public Place updatePlace(int id, CreatePlaceCommand place) {
         final String sql = "update " + PLACE + " set (name, latitude, longitude) values (?, ?, ?) where id = ?";
         Object[] args = {place.getName(), place.getLatitude(), place.getLongitude(), id};
