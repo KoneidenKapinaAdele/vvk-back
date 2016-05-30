@@ -51,14 +51,16 @@ public class PlaceStatusControllerTest {
         return "http://localhost:" + port + suffix;
     }
 
-    private List<PlaceStatus> getCurrentStatusForAllPlaces() {
-        ResponseEntity<PlaceStatus[]> result = restTemplate.getForEntity(url("/v1/status/current"), PlaceStatus[].class);
+    private List<PlaceStatus> getCurrentStatusForAllPlaces(Optional<LocalDateTime> atDate) {
+        String at = atDate.map(date -> "?at=" + date.toString()).orElse("");
+        ResponseEntity<PlaceStatus[]> result = restTemplate.getForEntity(url("/v1/place/status" + at), PlaceStatus[].class);
         assertEquals(HttpStatus.OK, result.getStatusCode());
         return Arrays.asList(result.getBody());
     }
 
-    private PlaceStatus getCurrentStatusForPlace(int placeId) {
-        ResponseEntity<PlaceStatus> result = restTemplate.getForEntity(url("/v1/place/" + placeId + "/status/current"), PlaceStatus.class);
+    private PlaceStatus getCurrentStatusForPlace(int placeId, Optional<LocalDateTime> atDate) {
+        String at = atDate.map(date -> "?at=" + date.toString()).orElse("");
+        ResponseEntity<PlaceStatus> result = restTemplate.getForEntity(url("/v1/place/" + placeId + "/status" + at), PlaceStatus.class);
         return result.getBody();
     }
 
@@ -82,7 +84,7 @@ public class PlaceStatusControllerTest {
         eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(2), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1), FREE);
 
-        List<PlaceStatus> result = getCurrentStatusForAllPlaces();
+        List<PlaceStatus> result = getCurrentStatusForAllPlaces(Optional.empty());
         assertNotNull(result);
 
         Optional<PlaceStatus> place1Status = result.stream().filter(status -> status.getPlace_id() == placeId1).findFirst();
@@ -101,6 +103,44 @@ public class PlaceStatusControllerTest {
     }
 
     @Test
+    public void should_list_state_for_all_places_at_specific_date() {
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+
+        final int placeId1 = placeTestUtil.addPlace();
+        final int placeId2 = placeTestUtil.addPlace();
+        final int placeId3 = placeTestUtil.addPlace();
+
+        final Place place1 = placeTestUtil.getPlace(placeId1);
+        final Place place2 = placeTestUtil.getPlace(placeId2);
+        final Place place3 = placeTestUtil.getPlace(placeId3);
+
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(3), FREE);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
+
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(3), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(2), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1), FREE);
+
+        List<PlaceStatus> result = getCurrentStatusForAllPlaces(Optional.of(LocalDateTime.now().minusDays(2)));
+        assertNotNull(result);
+
+        Optional<PlaceStatus> place1Status = result.stream().filter(status -> status.getPlace_id() == placeId1).findFirst();
+        assertTrue(place1Status.isPresent());
+        assertFalse(place1Status.get().isOccupied());
+        assertEquals(place1.getLongitude(), place1Status.get().getLongitude(), LOCATION_COMPARISON_DELTA);
+        assertEquals(place1.getLatitude(), place1Status.get().getLatitude(), LOCATION_COMPARISON_DELTA);
+
+        Optional<PlaceStatus> place2Status = result.stream().filter(status -> status.getPlace_id() == placeId2).findFirst();
+        assertTrue(place2Status.isPresent());
+        assertTrue(place2Status.get().isOccupied());
+        assertEquals(place2.getLongitude(), place2Status.get().getLongitude(), LOCATION_COMPARISON_DELTA);
+        assertEquals(place2.getLatitude(), place2Status.get().getLatitude(), LOCATION_COMPARISON_DELTA);
+
+        assertFalse(result.stream().anyMatch(status -> status.getPlace_id() == placeId3));
+    }
+
+    @Test
     public void should_get_current_state_for_place() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         final int placeId1 = placeTestUtil.addPlace();
@@ -110,9 +150,26 @@ public class PlaceStatusControllerTest {
         eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
         eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
 
-        PlaceStatus result = getCurrentStatusForPlace(placeId1);
+        PlaceStatus result = getCurrentStatusForPlace(placeId1, Optional.empty());
         assertNotNull(result);
         assertTrue(result.isOccupied());
+        assertEquals(place1.getLongitude(), result.getLongitude(), LOCATION_COMPARISON_DELTA);
+        assertEquals(place1.getLatitude(), result.getLatitude(), LOCATION_COMPARISON_DELTA);
+    }
+
+    @Test
+    public void should_get_state_for_place_at_specific_date() {
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        final int placeId1 = placeTestUtil.addPlace();
+        final Place place1 = placeTestUtil.getPlace(placeId1);
+
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(3), FREE);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
+
+        PlaceStatus result = getCurrentStatusForPlace(placeId1, Optional.of(LocalDateTime.now().minusDays(2)));
+        assertNotNull(result);
+        assertFalse(result.isOccupied());
         assertEquals(place1.getLongitude(), result.getLongitude(), LOCATION_COMPARISON_DELTA);
         assertEquals(place1.getLatitude(), result.getLatitude(), LOCATION_COMPARISON_DELTA);
     }
@@ -121,10 +178,10 @@ public class PlaceStatusControllerTest {
     public void should_throw_error_for_place_with_no_events() {
         final int placeId1 = placeTestUtil.addPlace();
         try {
-            getCurrentStatusForPlace(placeId1);
+            getCurrentStatusForPlace(placeId1, Optional.empty());
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
-            assertEquals(new NoCurrentStatusForPlaceException(placeId1).getMessage(), ex.getResponseBodyAsString());
+            assertEquals(new NoCurrentStatusForPlaceException(placeId1, Optional.empty()).getMessage(), ex.getResponseBodyAsString());
         }
     }
 }

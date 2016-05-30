@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,16 +31,16 @@ public class PlaceStatusRepository {
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Transactional
-    public Optional<PlaceStatus> getCurrentStatusForPlace(final int placeId) {
-        return getCurrentStatusForPlaces(Optional.of(new Integer[] {placeId})).stream().findFirst();
+    public Optional<PlaceStatus> getCurrentStatusForPlace(final int placeId, final Optional<LocalDateTime> atDate) {
+        return getCurrentStatusForPlaces(Optional.of(new Integer[] {placeId}), atDate).stream().findFirst();
     }
 
     @Transactional
-    public List<PlaceStatus> getCurrentStatusForAllPlaces() {
-        return getCurrentStatusForPlaces(Optional.empty());
+    public List<PlaceStatus> getCurrentStatusForAllPlaces(final Optional<LocalDateTime> atDate) {
+        return getCurrentStatusForPlaces(Optional.empty(), atDate);
     }
 
-    private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds) {
+    private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds, final Optional<LocalDateTime> atDate) {
         final MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("types", Arrays.asList(EventType.occupied.toString(), EventType.movement.toString()));
 
@@ -46,9 +48,14 @@ public class PlaceStatusRepository {
                 .filter(ids -> ids.length > 0)
                 .map(ids -> {
                     params.addValue("place_ids", Arrays.asList(ids));
-                    return " where e.place_id in (:place_ids)";
+                    return " where e.place_id in (:place_ids) ";
                 })
                 .orElse("");
+
+        final String subqueryWhere = atDate.map(date -> {
+            params.addValue("time", Timestamp.valueOf(date));
+            return " and time <= :time ";
+        }).orElse("");
 
         final String sql = "select e.place_id, p.latitude, p.longitude, e.type, e.value " +
                 "from event as e " +
@@ -56,7 +63,7 @@ public class PlaceStatusRepository {
                 "inner join (" +
                 "  select place_id, max(time) as latest_time" +
                 "  from event" +
-                "  where type in(:types)" +
+                "  where type in(:types) " + subqueryWhere +
                 "  group by place_id" +
                 ") as latest_event on latest_event.place_id = e.place_id and latest_event.latest_time = e.time " +
                 where;
