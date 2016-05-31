@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -91,8 +90,10 @@ public class EventRepository {
 
         final KeyHolder keyHolder = new GeneratedKeyHolder();
         final String sql = "insert into " + EVENT + " (device_id, place_id, time, type, value) values (?, ?, ?, ?, ?)";
+        final String[] generatedKeyColumns = new String[] {"id"};
+
         final PreparedStatementCreator statementCreator = connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(sql, generatedKeyColumns);
             ps.setInt(1, event.getDevice_id());
             ps.setInt(2, placeId);
             ps.setTimestamp(3, Timestamp.valueOf(timeOptional.orElse(LocalDateTime.now())));
