@@ -38,6 +38,11 @@ public class UsageStatsRepository {
             final Optional<Boolean> startOccupiedStatus = getStartStatusForPlaceId(placeId, startStatusForPlaces);
             final List<Event> eventsForPlace = getEventsForPlace(placeId, events);
 
+            if(eventsForPlace.isEmpty()) {
+                // Nothing to calculate
+                continue;
+            }
+
             LocalDateTime previousEventTime = starting;
             Optional<Boolean> isPreviousEventOccupied = startOccupiedStatus;
 
@@ -47,7 +52,7 @@ public class UsageStatsRepository {
                 isPreviousEventOccupied = Optional.of(OccupiedStatusSolver.isOccupied(event.getType(), event.getValue()));
             }
 
-            // Add period after last event to timespan end. Also works if there is no event at all for period.
+            // Add period after last event to timespan end
             if (isPreviousEventOccupied.isPresent()) {
                 addPeriodToSum(isPreviousEventOccupied.get(), previousEventTime, ending, periodSums);
             }

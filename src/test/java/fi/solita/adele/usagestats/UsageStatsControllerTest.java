@@ -115,7 +115,7 @@ public class UsageStatsControllerTest {
                 Optional.empty(),
                 Optional.of(new Integer[] {placeId}));
 
-        assertEquals(OCCUPIED, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
+        assertEquals(FREE, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
         assertEquals(EventType.movement, usageStats.getType());
     }
 
