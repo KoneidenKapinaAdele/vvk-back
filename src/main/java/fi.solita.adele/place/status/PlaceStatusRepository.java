@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +28,7 @@ public class PlaceStatusRepository {
         status.setOccupied(OccupiedStatusSolver.isOccupied(EventType.valueOf(rs.getString("type")), rs.getDouble("value")));
         status.setLatitude(rs.getDouble("latitude"));
         status.setLongitude(rs.getDouble("longitude"));
+        status.setLastEventTime(LocalDateTime.ofInstant(rs.getTimestamp("time").toInstant(), ZoneId.systemDefault()));
         return status;
     };
 
@@ -77,7 +79,7 @@ public class PlaceStatusRepository {
             return " and time <= :time ";
         }).orElse("");
 
-        final String sql = "select e.place_id, p.latitude, p.longitude, e.type, e.value " +
+        final String sql = "select e.place_id, p.latitude, p.longitude, e.type, e.value, e.time " +
                 "from event as e " +
                 "left join place as p on e.place_id = p.id " +
                 "inner join (" +
