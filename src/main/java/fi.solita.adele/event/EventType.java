@@ -5,5 +5,6 @@ public enum EventType {
     ambient_light,
     movement,
     obscured,
-    closed
+    closed,
+    temperature
 }
