@@ -74,6 +74,10 @@ public class PlaceStatusRepository {
                 })
                 .orElse("");
 
+        // Ugly hack to make a delay to no movement -> not occupied
+        final String subqueryMovementRestriction =
+                " and (not (type = 'movement' and value < 0.1 and time > (current_time - interval '15 seconds'))) ";
+
         final String subqueryWhere = atDate.map(date -> {
             params.addValue("time", Timestamp.valueOf(date));
             return " and time <= :time ";
@@ -85,7 +89,8 @@ public class PlaceStatusRepository {
                 "inner join (" +
                 "  select place_id, max(time) as latest_time" +
                 "  from event" +
-                "  where type in(:types) " + subqueryWhere +
+                "  where type in(:types) " +
+                subqueryWhere + subqueryMovementRestriction +
                 "  group by place_id" +
                 ") as latest_event on latest_event.place_id = e.place_id and latest_event.latest_time = e.time " +
                 where;
