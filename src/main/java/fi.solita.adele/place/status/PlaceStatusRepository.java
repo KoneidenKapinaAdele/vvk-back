@@ -90,7 +90,7 @@ public class PlaceStatusRepository {
                 "  select place_id, max(time) as latest_time" +
                 "  from event" +
                 "  where type in(:types) " +
-                subqueryWhere + // subqueryMovementRestriction +
+                subqueryWhere + subqueryMovementRestriction +
                 "  group by place_id" +
                 ") as latest_event on latest_event.place_id = e.place_id and latest_event.latest_time = e.time " +
                 where;
