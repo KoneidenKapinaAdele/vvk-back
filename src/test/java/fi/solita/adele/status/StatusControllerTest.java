@@ -33,6 +33,6 @@ public class StatusControllerTest {
         ResponseEntity<String> result = restTemplate.getForEntity(url("/status"), String.class);
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals("ok", result.getBody());
+        assertEquals("ok, 0 events", result.getBody());
     }
 }
