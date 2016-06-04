@@ -102,6 +102,36 @@ public class TimeLineControllerTest {
         assertEquals(timeLines.get(0).getRanges().get(0).getEndTime(), endTime);
     }
 
+    @Test
+    public void should_calculate_correct_time_line_with_no_usage() {
+        int placeId = placeTestUtil.addPlace();
+        LocalDateTime now = LocalDateTime.now();
+        int timeFrame = 60;
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, timeFrame);
+
+        assertEquals(timeLines.size(), 1);
+        assertEquals(timeLines.get(0).getPlaceId(), placeId);
+        assertEquals(timeLines.get(0).getRanges().size(), 0);
+    }
+
+    @Test
+    public void should_calculate_correct_time_line_with_time_frame_fitting_inside_the_event() {
+        int placeId = placeTestUtil.addPlace();
+        LocalDateTime now = LocalDateTime.now();
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        int timeFrame = 60;
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), OCCUPIED);
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, timeFrame);
+
+        assertEquals(timeLines.size(), 1);
+        assertEquals(timeLines.get(0).getPlaceId(), placeId);
+        assertEquals(timeLines.get(0).getRanges().size(), 1);
+        assertEquals(timeLines.get(0).getRanges().get(0).getStartTime(), now.minus(timeFrame, MINUTES));
+        assertEquals(timeLines.get(0).getRanges().get(0).getEndTime(), now);
+    }
+
     private List<TimeLine> getRanges(Optional<Object> device_id, Optional<Integer[]> place_id, LocalDateTime ending, int minutes) {
         UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(url("/v1/query/timeline"));
 
