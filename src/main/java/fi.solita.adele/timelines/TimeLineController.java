@@ -23,6 +23,6 @@ public class TimeLineController {
                                                            @RequestParam(value = "ending", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ending,
                                                            @RequestParam(value = "place_id", required = false) Integer[] place_ids,
                                                            @RequestParam(value = "device_id", required = false) Integer[] device_ids) {
-        return timeLineRepository.occupationTimeLine(Optional.ofNullable(device_ids), Optional.ofNullable(place_ids), Optional.of(ending), minutes);
+        return timeLineRepository.occupationTimeLine(Optional.ofNullable(device_ids), Optional.ofNullable(place_ids), Optional.ofNullable(ending), minutes);
     }
 }
