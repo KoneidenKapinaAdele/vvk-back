@@ -1,6 +1,5 @@
 package fi.solita.adele.place.status;
 
-import com.google.common.collect.Maps;
 import fi.solita.adele.event.EventType;
 import fi.solita.adele.event.OccupiedStatusSolver;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,10 +12,8 @@ import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -49,19 +46,6 @@ public class PlaceStatusRepository {
         return getCurrentStatusForPlaces(Optional.empty(), atDate);
     }
 
-    @Transactional
-    public Map<LocalDateTime, PlaceStatus> geStatusForPlaces(LocalDateTime starting, LocalDateTime ending, Integer[] place_ids, int interval, ChronoUnit unit) {
-        Map<LocalDateTime, PlaceStatus> reservedMap = Maps.newHashMap();
-        for (LocalDateTime time = starting; time.isBefore(ending); time = time.plus(interval, unit)) {
-            Optional<PlaceStatus> placeStatusOptional = getStatusForPlaces(place_ids[0], Optional.of(time));
-            final LocalDateTime time1 = time;
-            placeStatusOptional.ifPresent(placeStatus -> {
-                reservedMap.put(time1, placeStatus);
-            });
-        }
-        return reservedMap;
-    }
-
     private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds, final Optional<LocalDateTime> atDate) {
         final MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("types", Arrays.asList(EventType.occupied.toString(), EventType.movement.toString()));
@@ -90,7 +74,7 @@ public class PlaceStatusRepository {
                 "  select place_id, max(time) as latest_time" +
                 "  from event" +
                 "  where type in(:types) " +
-                subqueryWhere + subqueryMovementRestriction +
+                subqueryWhere +
                 "  group by place_id" +
                 ") as latest_event on latest_event.place_id = e.place_id and latest_event.latest_time = e.time " +
                 where;

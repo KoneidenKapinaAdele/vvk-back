@@ -5,6 +5,7 @@ import fi.solita.adele.DeviceTestUtil;
 import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
 import fi.solita.adele.event.EventType;
+import fi.solita.adele.usagestats.model.UsageStats;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -123,13 +124,13 @@ public class UsageStatsControllerTest {
     public void should_handle_place_with_no_events() {
         int placeId = placeTestUtil.addPlace();
 
-        UsageStats usageStats = getUsageStats(
-                LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(1),
-                Optional.empty(),
-                Optional.of(new Integer[] {placeId}));
+        UsageStats usageStats = getUsageStats(LocalDateTime.now().minusDays(1),
+                                              LocalDateTime.now().plusDays(1),
+                                              Optional.empty(),
+                                              Optional.of(new Integer[]{placeId}));
 
         assertEquals(FREE, usageStats.getAverage(), EVENT_VALUE_COMPARISON_DELTA);
         assertEquals(EventType.movement, usageStats.getType());
     }
+
 }

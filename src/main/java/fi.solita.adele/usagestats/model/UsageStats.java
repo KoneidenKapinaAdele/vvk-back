@@ -1,4 +1,4 @@
-package fi.solita.adele.usagestats;
+package fi.solita.adele.usagestats.model;
 
 import fi.solita.adele.event.EventType;
 import lombok.AllArgsConstructor;
