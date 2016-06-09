@@ -12,7 +12,7 @@ public class DeviceStatusController {
 
     @Resource private DeviceRepository repo;
 
-    @RequestMapping(value = "/v1/status", method = RequestMethod.GET)
+    @RequestMapping(value = "/status", method = RequestMethod.GET)
     @ResponseBody
     public List<DeviceStatus> getStatusForAllDevices() {
         return repo.getDeviceStatus();
