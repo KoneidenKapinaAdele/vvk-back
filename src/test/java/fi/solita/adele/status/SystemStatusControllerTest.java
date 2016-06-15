@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 @SpringApplicationConfiguration(classes = App.class)
 @WebAppConfiguration
 @IntegrationTest({"server.port:0"})
-public class StatusControllerTest {
+public class SystemStatusControllerTest {
     @Value("${local.server.port}")
     int port;
 

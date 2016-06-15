@@ -58,10 +58,6 @@ public class PlaceStatusRepository {
                 })
                 .orElse("");
 
-        // Ugly hack to make a delay to no movement -> not occupied
-        final String subqueryMovementRestriction =
-                " and (not (type = 'movement' and value < 0.1 and time > (localtimestamp - interval '15 seconds'))) ";
-
         final String subqueryWhere = atDate.map(date -> {
             params.addValue("time", Timestamp.valueOf(date));
             return " and time <= :time ";

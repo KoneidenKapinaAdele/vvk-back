@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 @Repository
 public class TimeLineRepository {
 
@@ -45,11 +43,10 @@ public class TimeLineRepository {
     }
 
     private Integer[] allPlaces() {
-        return (Integer[]) placeRepository.allPlaces()
+        return placeRepository.allPlaces()
                                           .stream()
                                           .map(Place::getId)
-                                          .collect(toList())
-                                          .toArray();
+                                          .toArray(Integer[]::new);
     }
 
     private List<TimeLine> solveTimeLinesForPlaces(Integer[] place_ids, Optional<Integer[]> device_ids, LocalDateTime ending, LocalDateTime starting) {

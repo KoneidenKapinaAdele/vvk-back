@@ -11,7 +11,7 @@ import javax.annotation.Resource;
 
 @CrossOrigin
 @RestController
-public class StatusController {
+public class SystemStatusController {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
