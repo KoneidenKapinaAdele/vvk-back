@@ -10,7 +10,6 @@ import fi.solita.adele.place.status.PlaceStatus;
 import fi.solita.adele.place.status.PlaceStatusRepository;
 import fi.solita.adele.timelines.model.Range;
 import fi.solita.adele.timelines.model.TimeLine;
-import fi.solita.adele.utils.StatisticsUtils;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
+import static fi.solita.adele.utils.StatisticsUtils.getStartStatusForPlaceId;
 
 @Repository
 public class TimeLineRepository {
@@ -50,7 +52,7 @@ public class TimeLineRepository {
     }
 
     private List<TimeLine> solveTimeLinesForPlaces(Integer[] place_ids, Optional<Integer[]> device_ids, LocalDateTime ending, LocalDateTime starting) {
-        final List<PlaceStatus> startStatusesForPlaces = placeStatusRepository.getCurrentStatusForAllPlaces(Optional.of( starting));
+        final List<PlaceStatus> startStatusesForPlaces = placeStatusRepository.getCurrentStatusForAllPlaces(Optional.of(starting));
         final List<Event> allEvents = eventRepository.all(Optional.of(starting),
                                                                 Optional.of(ending),
                                                                 device_ids,
@@ -58,34 +60,33 @@ public class TimeLineRepository {
                                                                 Optional.of(EventType.movement));
         return Arrays.asList(place_ids)
                      .stream()
-                     .map(place_id -> resolveTimeLineForPlace(ending,
-                                                              starting,
+                     .map(place_id -> resolveTimeLineForPlace(starting,
+                                                              ending,
                                                               startStatusesForPlaces,
                                                               allEvents,
                                                               place_id))
                      .collect(Collectors.toList());
     }
 
-    private TimeLine resolveTimeLineForPlace(LocalDateTime ending, LocalDateTime starting, List<PlaceStatus> startStatusForPlaces, List<Event> eventsForPlaces, Integer place_id) {
-        boolean previousOccupiedStatus = StatisticsUtils.getStartStatusForPlaceId(place_id, startStatusForPlaces).orElse(false);
-        LocalDateTime previousStatusTime = starting;
-        List<Range> ranges = new ArrayList<>();
+    private TimeLine resolveTimeLineForPlace(LocalDateTime starting, LocalDateTime ending, List<PlaceStatus> startStatusForPlaces, List<Event> eventsForPlaces, Integer place_id) {
         Range tempRange = new Range();
-        for (Event event : StatisticsUtils.getEventsForPlace(place_id, eventsForPlaces)) {
-            if (previousOccupiedStatus) {
-                tempRange = new Range();
-                tempRange.setStartTime(previousStatusTime);
-            } else if (tempRange.getStartTime() != null) {
-                tempRange.setEndTime(previousStatusTime);
-                ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
-            }
-            previousOccupiedStatus = (OccupiedStatusSolver.isOccupied(event.getType(), event.getValue()));
-            previousStatusTime = event.getTime();
+        boolean startingOccupied = getStartStatusForPlaceId(place_id, startStatusForPlaces).orElse(false);
+        if (startingOccupied) {
+            tempRange.setStartTime(starting);
         }
-        if (previousOccupiedStatus) {
-            ranges.add(new Range(previousStatusTime, ending));
-        } else if (tempRange.getStartTime() != null) {
-            ranges.add(new Range(tempRange.getStartTime(), previousStatusTime));
+        List<Range> ranges = new ArrayList<>();
+        for (Event event : getEventsForPlace(place_id, eventsForPlaces)) {
+            boolean occupied = OccupiedStatusSolver.isOccupied(event.getType(), event.getValue());
+            if (occupied && tempRange.getStartTime() == null) {
+                tempRange.setStartTime(event.getTime());
+            } else if (!occupied && tempRange.getStartTime() != null) {
+                tempRange.setEndTime(event.getTime());
+                ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
+                tempRange = new Range();
+            }
+        }
+        if (tempRange.getStartTime() != null) {
+            ranges.add(new Range(tempRange.getStartTime(), ending));
         }
         return new TimeLine(place_id, ranges);
     }

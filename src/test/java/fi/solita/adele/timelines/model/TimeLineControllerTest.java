@@ -42,19 +42,25 @@ public class TimeLineControllerTest {
     private PlaceTestUtil placeTestUtil;
     private EventTestUtil eventTestUtil;
 
+    private int placeId;
+    private int deviceId;
+
     @Before
     public void setup() {
         placeTestUtil = new PlaceTestUtil(port);
         eventTestUtil = new EventTestUtil(port);
+
+        placeId = placeTestUtil.addPlace();
+        deviceId = DeviceTestUtil.getNewDeviceId();
     }
+
     @Test
     public void should_calculate_correct_time_line_with_one_usage() {
-        int placeId = placeTestUtil.addPlace();
-        int deviceId = DeviceTestUtil.getNewDeviceId();
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(10, MINUTES);
         LocalDateTime endTime = now.minus(5, MINUTES);
         eventTestUtil.addEvent(deviceId, placeId, startTime, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(7, MINUTES), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, endTime, FREE);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
@@ -67,12 +73,57 @@ public class TimeLineControllerTest {
     }
 
     @Test
+    public void should_handle_several_free_events() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = now.minus(10, MINUTES);
+        LocalDateTime endTime = now.minus(5, MINUTES);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(7, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, endTime, FREE);
+        eventTestUtil.addEvent(deviceId, placeId, endTime.plusMinutes(2), FREE);
+        eventTestUtil.addEvent(deviceId, placeId, endTime.plusMinutes(4), FREE);
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
+
+        assertEquals(timeLines.size(), 1);
+        assertEquals(timeLines.get(0).getPlaceId(), placeId);
+        assertEquals(timeLines.get(0).getRanges().size(), 1);
+        assertEquals(timeLines.get(0).getRanges().get(0).getStartTime(), startTime);
+        assertEquals(timeLines.get(0).getRanges().get(0).getEndTime(), endTime);
+    }
+
+    @Test
+    public void should_calculate_correct_time_line_with_two_usages() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = now.minus(30, MINUTES);
+        LocalDateTime endTime = now.minus(20, MINUTES);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(23, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, endTime, FREE);
+        LocalDateTime startTime2 = now.minus(10, MINUTES);
+        LocalDateTime endTime2 = now.minus(5, MINUTES);
+        eventTestUtil.addEvent(deviceId, placeId, startTime2, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(7, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, endTime2, FREE);
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
+
+        assertEquals(timeLines.size(), 1);
+        assertEquals(timeLines.get(0).getPlaceId(), placeId);
+        assertEquals(timeLines.get(0).getRanges().size(), 2);
+        assertEquals(timeLines.get(0).getRanges().get(0).getStartTime(), startTime);
+        assertEquals(timeLines.get(0).getRanges().get(0).getEndTime(), endTime);
+        assertEquals(timeLines.get(0).getRanges().get(1).getStartTime(), startTime2);
+        assertEquals(timeLines.get(0).getRanges().get(1).getEndTime(), endTime2);
+    }
+
+    @Test
     public void should_calculate_correct_time_line_with_usage_not_ending_in_time_frame() {
-        int placeId = placeTestUtil.addPlace();
-        int deviceId = DeviceTestUtil.getNewDeviceId();
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(10, MINUTES);
         eventTestUtil.addEvent(deviceId, placeId, startTime, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(7, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(4, MINUTES), OCCUPIED);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
 
@@ -85,8 +136,6 @@ public class TimeLineControllerTest {
 
     @Test
     public void should_calculate_correct_time_line_with_usage_starting_before_time_frame() {
-        int placeId = placeTestUtil.addPlace();
-        int deviceId = DeviceTestUtil.getNewDeviceId();
         int timeFrame = 60;
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime endTime = now.minus(5, MINUTES);
@@ -104,7 +153,6 @@ public class TimeLineControllerTest {
 
     @Test
     public void should_calculate_correct_time_line_with_no_usage() {
-        int placeId = placeTestUtil.addPlace();
         LocalDateTime now = LocalDateTime.now();
         int timeFrame = 60;
 
@@ -117,11 +165,13 @@ public class TimeLineControllerTest {
 
     @Test
     public void should_calculate_correct_time_line_with_time_frame_fitting_inside_the_event() {
-        int placeId = placeTestUtil.addPlace();
         LocalDateTime now = LocalDateTime.now();
         int deviceId = DeviceTestUtil.getNewDeviceId();
         int timeFrame = 60;
         eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame - 5, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame - 10, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame - 15, MINUTES), OCCUPIED);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, timeFrame);
 
