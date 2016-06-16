@@ -4,6 +4,7 @@ import fi.solita.adele.App;
 import fi.solita.adele.DeviceTestUtil;
 import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
+import fi.solita.adele.event.EventType;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -90,6 +91,7 @@ public class TimeLineControllerTest {
         assertEquals(endTime, timeLines.get(0).getRanges().get(0).getEndTime());
     }
 
+    @Ignore
     @Test
     public void should_set_back_free_if_no_movement_for_certain_minutes() {
         LocalDateTime now = LocalDateTime.now();
@@ -174,12 +176,11 @@ public class TimeLineControllerTest {
         assertEquals(timeLines.get(0).getRanges().get(1).getEndTime(), endTime2);
     }
 
-    @Ignore
     @Test
     public void should_calculate_correct_time_line_with_usage_not_ending_in_time_frame() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(10, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, startTime, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, EventType.closed.toString(), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, now.minus(7, MINUTES), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, now.minus(4, MINUTES), OCCUPIED);
 
@@ -198,7 +199,7 @@ public class TimeLineControllerTest {
         int timeFrame = 60;
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime endTime = now.minus(5, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), EventType.closed.toString(), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, endTime, FREE);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, timeFrame);
@@ -210,7 +211,6 @@ public class TimeLineControllerTest {
         assertEquals(timeLines.get(0).getRanges().get(0).getEndTime(), endTime);
     }
 
-    @Ignore
     @Test
     public void should_calculate_correct_time_line_with_no_usage() {
         LocalDateTime now = LocalDateTime.now();
