@@ -61,46 +61,52 @@ public class PlaceStatusRepository {
         LocalDateTime now = atDate.isPresent() ? atDate.get() : LocalDateTime.now();
         Optional<LocalDateTime> starting = Optional.of(now.minusHours(1));
         Optional<LocalDateTime> ending = Optional.of(now);
-        List<Event> events = eventRepository.all(starting, ending,
+        List<Event> events = eventRepository.all(starting,
+                                                 ending,
                                                  Optional.<Integer[]>empty(),
                                                  placeIds,
                                                  Optional.of(new EventType[]{EventType.movement, EventType.closed}));
 
         List<PlaceStatus> statuses = new ArrayList<>();
         for (Integer place_id : placeIds.orElse(allPlaces())) {
-            boolean doorClosed = false;
-            boolean occupied = false;
-            LocalDateTime lastEventTime = starting.get();
-            for (Event event : getEventsForPlace(place_id, events)) {
-                if (event.getType() == EventType.closed) {
-                    if (event.getValue() == 1) {
-                        doorClosed = true;
-                        if (occupied) {
-                            occupied = false;
-                            lastEventTime = event.getTime();
-                        }
-                    } else {
-                        doorClosed = false;
-                    }
-                } else {
-                    if (event.getValue() == 1) {
-                        if (doorClosed) {
-                            occupied = true;
-                            lastEventTime = event.getTime();
-                        }
-                    }
-                }
+            PlaceStatus status = getPlaceStatus(starting, events, place_id);
+            if (status.getLastEventTime().isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
+                status.setOccupied(false);
             }
-            PlaceStatus status = new PlaceStatus();
-            if (lastEventTime.isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
-                occupied = false;
-            }
-            status.setOccupied(occupied);
-            status.setLastEventTime(lastEventTime);
             status.setPlace_id(place_id);
             statuses.add(status);
         }
         return statuses;
+    }
+
+    private PlaceStatus getPlaceStatus(Optional<LocalDateTime> starting, List<Event> events, Integer place_id) {
+        boolean doorClosed = false;
+
+        PlaceStatus status = new PlaceStatus();
+        status.setLastEventTime(starting.get());
+        status.setOccupied(false);
+
+        for (Event event : getEventsForPlace(place_id, events)) {
+            if (event.getType() == EventType.closed) {
+                if (event.getValue() == 1) {
+                    doorClosed = true;
+                    if (status.isOccupied()) {
+                        status.setOccupied(false);
+                        status.setLastEventTime(event.getTime());
+                    }
+                } else {
+                    doorClosed = false;
+                }
+            } else {
+                if (event.getValue() == 1) {
+                    if (doorClosed) {
+                        status.setOccupied(true);
+                        status.setLastEventTime(event.getTime());
+                    }
+                }
+            }
+        }
+        return status;
     }
 
     private Integer[] allPlaces() {
