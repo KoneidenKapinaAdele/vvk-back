@@ -52,9 +52,10 @@ public class TimeLineResolver {
                         tempRange = new Range();
                     }
                 }
+
             }
             int nextEvent = eventsForPlace.indexOf(event) + 1;
-            if (occupationShouldTimeOut(ending, events, eventsForPlace, event, nextEvent)) {
+            if (occupationShouldTimeOut(ending, eventsForPlace, event, nextEvent)) {
                 if (tempRange.getStartTime() != null) {
                     tempRange.setEndTime(event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT));
                     ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
@@ -68,12 +69,12 @@ public class TimeLineResolver {
         return new TimeLine(place_id, ranges);
     }
 
-    private static boolean occupationShouldTimeOut(LocalDateTime ending, List<Event> events, List<Event> eventsForPlace, Event event, int nextEvent) {
-        boolean nextEventIsMaxTimeFromNow = nextEvent < events.size() && eventsForPlace.get(nextEvent)
+    private static boolean occupationShouldTimeOut(LocalDateTime ending, List<Event> eventsForPlace, Event event, int nextEvent) {
+        LocalDateTime shouldTimeOut = event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT);
+        boolean nextEventIsMaxTimeFromNow = nextEvent < eventsForPlace.size() && eventsForPlace.get(nextEvent)
                                                                                        .getTime()
-                                                                                       .isAfter(event.getTime()
-                                                                                        .plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT));
-        boolean latestEventWasOverMaxTimeAgo = nextEvent == events.size() && ending.isAfter(event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT));
+                                                                                       .isAfter(shouldTimeOut);
+        boolean latestEventWasOverMaxTimeAgo = nextEvent == eventsForPlace.size() && ending.isAfter(shouldTimeOut);
         return nextEventIsMaxTimeFromNow || latestEventWasOverMaxTimeAgo;
     }
 }

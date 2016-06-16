@@ -91,6 +91,7 @@ public class TimeLineControllerTest {
         assertEquals(endTime, timeLines.get(0).getRanges().get(0).getEndTime());
     }
 
+
     @Test
     public void should_set_back_free_if_no_movement_for_certain_minutes() {
         LocalDateTime now = LocalDateTime.now();
