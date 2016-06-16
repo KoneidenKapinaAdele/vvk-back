@@ -97,6 +97,7 @@ public class PlaceStatusRepository {
             }
             status.setOccupied(occupied);
             status.setLastEventTime(lastEventTime);
+            status.setPlace_id(place_id);
             statuses.add(status);
         }
         return statuses;
