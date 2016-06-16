@@ -132,6 +132,26 @@ public class PlaceStatusControllerTest {
         assertFalse(placeStatus.isOccupied());
     }
 
+    @Test
+    public void should_set_latitude_and_longitude_to_place_status() {
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        final int placeId1 = placeTestUtil.addPlace();
+        int maxOccupationWithNoMovement = 10;
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 5), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId,
+                               placeId1,
+                               LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 3),
+                               EventType.movement.toString(),
+                               OCCUPIED);
+
+        PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
+
+        assertNotNull(placeStatus);
+        assertFalse(placeStatus.isOccupied());
+        assertTrue(placeStatus.getLatitude()  > 0);
+        assertTrue(placeStatus.getLongitude() > 0);
+    }
+
 
     @Ignore
     @Test

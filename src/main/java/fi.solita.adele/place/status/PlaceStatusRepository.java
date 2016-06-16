@@ -74,6 +74,9 @@ public class PlaceStatusRepository {
                 status.setOccupied(false);
             }
             status.setPlace_id(place_id);
+            Place place = placeRepository.getPlace(place_id);
+            status.setLatitude(place.getLatitude());
+            status.setLongitude(place.getLongitude());
             statuses.add(status);
         }
         return statuses;

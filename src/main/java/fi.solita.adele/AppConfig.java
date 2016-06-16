@@ -22,6 +22,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -32,6 +33,8 @@ public class AppConfig {
     private static final String DB_URL = "jdbc:h2:mem:vvk;DB_CLOSE_DELAY=-1;MODE=PostgreSQL";
     private static final String DB_USER = "sa";
     private static final String DB_PASSWORD = "sa";
+
+    private static final LocalDateTime applicationStartTime = LocalDateTime.now();
 
     @Value("${spring.datasource.driverClassName:h2}")
     private String dbDriver;
