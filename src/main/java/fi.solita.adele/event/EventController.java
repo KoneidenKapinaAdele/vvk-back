@@ -24,7 +24,7 @@ public class EventController {
             @RequestParam(value = "ending", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> ending,
             @RequestParam(value = "device_id", required = false) Integer[] device_id,
             @RequestParam(value = "place_id", required = false) Integer[] place_id,
-            @RequestParam(value = "type", required = false) Optional<EventType> type) {
+            @RequestParam(value = "type", required = false) Optional<EventType[]> type) {
         return eventRepository.all(starting, ending, Optional.ofNullable(device_id), Optional.ofNullable(place_id), type);
     }
 

@@ -18,6 +18,8 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
+
 @Repository
 public class EventRepository {
 
@@ -44,7 +46,7 @@ public class EventRepository {
                            final Optional<LocalDateTime> ending,
                            final Optional<Integer[]> device_id,
                            final Optional<Integer[]> place_id,
-                           final Optional<EventType> type) {
+                           final Optional<EventType[]> type) {
         final List<String> where = new ArrayList<>();
         final MapSqlParameterSource params = new MapSqlParameterSource();
 
@@ -64,9 +66,12 @@ public class EventRepository {
             where.add("place_id IN (:place_id)");
             params.addValue("place_id", Arrays.asList(ids));
         });
-        type.ifPresent(t -> {
-            where.add("type = :type");
-            params.addValue("type", t.toString());
+        type.filter(ts -> ts.length > 0).ifPresent(types -> {
+            where.add("type IN (:type)");
+            params.addValue("type", Arrays.asList(types)
+                                          .stream()
+                                          .map(Enum::toString)
+                                          .collect(toList()));
         });
 
         String whereSql = "";

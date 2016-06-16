@@ -31,7 +31,7 @@ public class UsageStatsRepository {
                                     final Optional<Integer[]> device_ids,
                                     final Optional<Integer[]> place_ids) {
 
-        final Optional<EventType> eventType = Optional.of(EventType.movement);
+        final Optional<EventType[]> eventType = Optional.of(new EventType[]{EventType.movement});
         final List<PlaceStatus> startStatusForPlaces = placeStatusRepository.getCurrentStatusForAllPlaces(Optional.of(starting));
         final List<Event> events = eventRepository.all(Optional.of(starting), Optional.of(ending), device_ids, place_ids, eventType);
 
@@ -65,7 +65,7 @@ public class UsageStatsRepository {
 
         UsageStats usageStats = new UsageStats();
         usageStats.setAverage(StatisticsUtils.calculateAverage(periodSums));
-        usageStats.setType(eventType.get());
+        usageStats.setType(eventType.get()[0]);
         return usageStats;
     }
 }
