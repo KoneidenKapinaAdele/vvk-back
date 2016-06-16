@@ -90,6 +90,24 @@ public class TimeLineControllerTest {
         assertEquals(endTime, timeLines.get(0).getRanges().get(0).getEndTime());
     }
 
+    @Test
+    public void should_set_back_free_if_no_movement_for_certain_minutes() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = now.minus(15, MINUTES);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement.toString(), OCCUPIED);
+        int maxOccupiedIfNoMovement = 10;
+        LocalDateTime endTime = startTime.plusMinutes(1 + maxOccupiedIfNoMovement);
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
+
+        assertEquals(1, timeLines.size());
+        assertEquals(placeId, timeLines.get(0).getPlaceId());
+        assertEquals(1, timeLines.get(0).getRanges().size());
+        assertEquals(startTime, timeLines.get(0).getRanges().get(0).getStartTime());
+        assertEquals(endTime, timeLines.get(0).getRanges().get(0).getEndTime());
+    }
+
     @Ignore
     @Test
     public void should_calculate_correct_time_line_with_one_usage() {
