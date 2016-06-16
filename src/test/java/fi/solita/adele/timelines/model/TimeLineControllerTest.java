@@ -90,7 +90,6 @@ public class TimeLineControllerTest {
         assertEquals(endTime, timeLines.get(0).getRanges().get(0).getEndTime());
     }
 
-
     @Ignore
     @Test
     public void should_calculate_correct_time_line_with_one_usage() {

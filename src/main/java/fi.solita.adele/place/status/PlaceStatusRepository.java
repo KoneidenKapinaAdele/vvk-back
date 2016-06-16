@@ -1,20 +1,24 @@
 package fi.solita.adele.place.status;
 
+import fi.solita.adele.event.Event;
+import fi.solita.adele.event.EventRepository;
 import fi.solita.adele.event.EventType;
 import fi.solita.adele.event.OccupiedStatusSolver;
+import fi.solita.adele.place.Place;
+import fi.solita.adele.place.PlaceRepository;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
 
 @Repository
 public class PlaceStatusRepository {
@@ -32,6 +36,12 @@ public class PlaceStatusRepository {
     @Resource
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    @Resource
+    private EventRepository eventRepository;
+
+    @Resource
+    private PlaceRepository placeRepository;
+
     @Transactional
     public Optional<PlaceStatus> getCurrentStatusForPlace(final int placeId, final Optional<LocalDateTime> atDate) {
         return getStatusForPlaces(placeId, atDate);
@@ -47,34 +57,47 @@ public class PlaceStatusRepository {
     }
 
     private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds, final Optional<LocalDateTime> atDate) {
-        final MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("types", Arrays.asList(EventType.occupied.toString(), EventType.movement.toString()));
+        LocalDateTime now = atDate.isPresent() ? atDate.get() : LocalDateTime.now();
+        List<Event> events = eventRepository.all(Optional.of(now.minusHours(1)),
+                                                 Optional.of(now),
+                                                 Optional.<Integer[]>empty(),
+                                                 placeIds,
+                                                 Optional.of(new EventType[]{EventType.movement, EventType.closed}));
 
-        final String where = placeIds
-                .filter(ids -> ids.length > 0)
-                .map(ids -> {
-                    params.addValue("place_ids", Arrays.asList(ids));
-                    return " where e.place_id in (:place_ids) ";
-                })
-                .orElse("");
+        List<PlaceStatus> statuses = new ArrayList<>();
+        for (Integer place_id : placeIds.orElse(allPlaces())) {
+            boolean doorClosed = false;
+            boolean occupied = false;
+            LocalDateTime lastEventTime = null;
+            for (Event event : getEventsForPlace(place_id, events)) {
+                if (event.getType() == EventType.closed) {
+                    if (event.getValue() == 1) {
+                        doorClosed = true;
+                        if (occupied) {
+                            occupied = false;
+                            lastEventTime = event.getTime();
+                        }
+                    } else {
+                        doorClosed = false;
+                    }
+                } else {
+                    if (event.getValue() == 1) {
+                        if (doorClosed) {
+                            occupied = true;
+                            lastEventTime = event.getTime();
+                        }
+                    }
+                }
+            }
+            PlaceStatus status = new PlaceStatus();
+            status.setOccupied(occupied);
+            status.setLastEventTime(lastEventTime);
+            statuses.add(status);
+        }
+        return statuses;
+    }
 
-        final String subqueryWhere = atDate.map(date -> {
-            params.addValue("time", Timestamp.valueOf(date));
-            return " and time <= :time ";
-        }).orElse("");
-
-        final String sql = "select e.place_id, p.latitude, p.longitude, e.type, e.value, e.time " +
-                "from event as e " +
-                "left join place as p on e.place_id = p.id " +
-                "inner join (" +
-                "  select place_id, max(time) as latest_time" +
-                "  from event" +
-                "  where type in(:types) " +
-                subqueryWhere +
-                "  group by place_id" +
-                ") as latest_event on latest_event.place_id = e.place_id and latest_event.latest_time = e.time " +
-                where;
-
-        return namedParameterJdbcTemplate.query(sql, params, placeStatusRowMapper);
+    private Integer[] allPlaces() {
+        return placeRepository.allPlaces().stream().map(Place::getId).toArray(Integer[]::new);
     }
 }
