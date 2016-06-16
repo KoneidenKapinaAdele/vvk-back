@@ -32,6 +32,7 @@ public class PlaceStatusRepository {
         status.setLastEventTime(LocalDateTime.ofInstant(rs.getTimestamp("time").toInstant(), ZoneId.systemDefault()));
         return status;
     };
+    public static final int MAX_OCCUPATION_WITH_NO_MOVEMENT = 10;
 
     @Resource
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -58,8 +59,9 @@ public class PlaceStatusRepository {
 
     private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds, final Optional<LocalDateTime> atDate) {
         LocalDateTime now = atDate.isPresent() ? atDate.get() : LocalDateTime.now();
-        List<Event> events = eventRepository.all(Optional.of(now.minusHours(1)),
-                                                 Optional.of(now),
+        Optional<LocalDateTime> starting = Optional.of(now.minusHours(1));
+        Optional<LocalDateTime> ending = Optional.of(now);
+        List<Event> events = eventRepository.all(starting, ending,
                                                  Optional.<Integer[]>empty(),
                                                  placeIds,
                                                  Optional.of(new EventType[]{EventType.movement, EventType.closed}));
@@ -68,7 +70,7 @@ public class PlaceStatusRepository {
         for (Integer place_id : placeIds.orElse(allPlaces())) {
             boolean doorClosed = false;
             boolean occupied = false;
-            LocalDateTime lastEventTime = null;
+            LocalDateTime lastEventTime = starting.get();
             for (Event event : getEventsForPlace(place_id, events)) {
                 if (event.getType() == EventType.closed) {
                     if (event.getValue() == 1) {
@@ -90,6 +92,9 @@ public class PlaceStatusRepository {
                 }
             }
             PlaceStatus status = new PlaceStatus();
+            if (lastEventTime.isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
+                occupied = false;
+            }
             status.setOccupied(occupied);
             status.setLastEventTime(lastEventTime);
             statuses.add(status);

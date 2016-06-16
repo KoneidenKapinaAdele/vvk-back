@@ -106,6 +106,32 @@ public class PlaceStatusControllerTest {
         assertFalse(placeStatus.isOccupied());
     }
 
+    @Test
+    public void should_not_set_place_occupied_if_no_movement_after_closing_door() {
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        final int placeId1 = placeTestUtil.addPlace();
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), EventType.closed.toString(), OCCUPIED);
+
+        PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
+
+        assertNotNull(placeStatus);
+        assertFalse(placeStatus.isOccupied());
+    }
+
+    @Test
+    public void should_set_place_free_if_no_movement_for_certain_time() {
+        int deviceId = DeviceTestUtil.getNewDeviceId();
+        final int placeId1 = placeTestUtil.addPlace();
+        int maxOccupationWithNoMovement = 10;
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 5), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 3), EventType.movement.toString(), OCCUPIED);
+
+        PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
+
+        assertNotNull(placeStatus);
+        assertFalse(placeStatus.isOccupied());
+    }
+
 
     @Ignore
     @Test
