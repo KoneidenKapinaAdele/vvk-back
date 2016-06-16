@@ -166,7 +166,6 @@ public class TimeLineControllerTest {
     @Test
     public void should_calculate_correct_time_line_with_time_frame_fitting_inside_the_event() {
         LocalDateTime now = LocalDateTime.now();
-        int deviceId = DeviceTestUtil.getNewDeviceId();
         int timeFrame = 60;
         eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame - 5, MINUTES), OCCUPIED);
@@ -180,6 +179,30 @@ public class TimeLineControllerTest {
         assertEquals(timeLines.get(0).getRanges().size(), 1);
         assertEquals(timeLines.get(0).getRanges().get(0).getStartTime(), now.minus(timeFrame, MINUTES));
         assertEquals(timeLines.get(0).getRanges().get(0).getEndTime(), now);
+    }
+
+    @Test
+    public void should_show_free_in_the_future_when_occupied_in_present() {
+        LocalDateTime now = LocalDateTime.now();
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(5, MINUTES), OCCUPIED);
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now.plusMinutes(60), 10);
+
+        assertEquals(1, timeLines.size());
+        assertEquals(placeId, timeLines.get(0).getPlaceId());
+        assertEquals(0, timeLines.get(0).getRanges().size());
+    }
+
+    @Test
+    public void should_show_free_in_future_when_free_in_present() {
+        LocalDateTime now = LocalDateTime.now();
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(5, MINUTES), FREE);
+
+        List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now.plusMinutes(60), 10);
+
+        assertEquals(1, timeLines.size());
+        assertEquals(placeId, timeLines.get(0).getPlaceId());
+        assertEquals(0, timeLines.get(0).getRanges().size());
     }
 
     private List<TimeLine> getRanges(Optional<Object> device_id, Optional<Integer[]> place_id, LocalDateTime ending, int minutes) {

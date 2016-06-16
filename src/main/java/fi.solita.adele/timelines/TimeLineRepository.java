@@ -1,5 +1,6 @@
 package fi.solita.adele.timelines;
 
+import com.google.common.collect.Lists;
 import fi.solita.adele.event.Event;
 import fi.solita.adele.event.EventRepository;
 import fi.solita.adele.event.EventType;
@@ -69,6 +70,10 @@ public class TimeLineRepository {
     }
 
     private TimeLine resolveTimeLineForPlace(LocalDateTime starting, LocalDateTime ending, List<PlaceStatus> startStatusForPlaces, List<Event> eventsForPlaces, Integer place_id) {
+        LocalDateTime now = LocalDateTime.now();
+        if (starting.isAfter(now)) {
+            return new TimeLine(place_id, Lists.newArrayList());
+        }
         Range tempRange = new Range();
         boolean startingOccupied = getStartStatusForPlaceId(place_id, startStatusForPlaces).orElse(false);
         if (startingOccupied) {
@@ -86,7 +91,7 @@ public class TimeLineRepository {
             }
         }
         if (tempRange.getStartTime() != null) {
-            ranges.add(new Range(tempRange.getStartTime(), ending));
+            ranges.add(new Range(tempRange.getStartTime(), ending.isAfter(now) ? now : ending));
         }
         return new TimeLine(place_id, ranges);
     }
