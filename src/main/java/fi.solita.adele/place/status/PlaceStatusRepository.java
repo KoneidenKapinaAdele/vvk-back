@@ -93,12 +93,12 @@ public class PlaceStatusRepository {
             if (event.getType() == EventType.closed) {
                 if (event.getValue() == 1) {
                     doorClosed = true;
-                    if (status.isOccupied()) {
-                        status.setOccupied(false);
-                        status.setLastEventTime(event.getTime());
-                    }
                 } else {
                     doorClosed = false;
+                }
+                if (status.isOccupied()) {
+                    status.setOccupied(false);
+                    status.setLastEventTime(event.getTime());
                 }
             } else {
                 if (event.getValue() == 1) {

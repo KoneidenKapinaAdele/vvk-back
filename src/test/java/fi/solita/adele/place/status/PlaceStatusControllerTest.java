@@ -98,7 +98,7 @@ public class PlaceStatusControllerTest {
                                placeId1,
                                LocalDateTime.now().minusMinutes(1),
                                EventType.closed.toString(),
-                               OCCUPIED);
+                               FREE);
 
         PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
 
