@@ -53,14 +53,14 @@ public class TimeLineResolver {
                     }
                 }
             }
-//            int nextEvent = eventsForPlace.indexOf(event) + 1;
-//            if (occupationShouldTimeOut(ending, events, eventsForPlace, event, nextEvent)) {
-//                if (tempRange.getStartTime() != null) {
-//                    tempRange.setEndTime(event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT));
-//                    ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
-//                    tempRange = new Range();
-//                }
-//            }
+            int nextEvent = eventsForPlace.indexOf(event) + 1;
+            if (occupationShouldTimeOut(ending, events, eventsForPlace, event, nextEvent)) {
+                if (tempRange.getStartTime() != null) {
+                    tempRange.setEndTime(event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT));
+                    ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
+                    tempRange = new Range();
+                }
+            }
         }
         if (tempRange.getStartTime() != null) {
             ranges.add(new Range(tempRange.getStartTime(), ending.isAfter(now) ? now : ending));
