@@ -7,7 +7,6 @@ import fi.solita.adele.PlaceTestUtil;
 import fi.solita.adele.event.EventType;
 import fi.solita.adele.place.Place;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -154,7 +153,6 @@ public class PlaceStatusControllerTest {
         assertTrue(placeStatus.getLongitude() > 0);
     }
 
-
     @Test
     public void should_list_current_state_for_all_places() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
@@ -168,10 +166,10 @@ public class PlaceStatusControllerTest {
         final Place place3 = placeTestUtil.getPlace(placeId3);
 
         eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(2), EventType.closed.toString(), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(1), EventType.movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(1), movement.toString(), OCCUPIED);
 
         eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(3), EventType.closed.toString(), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(2), EventType.movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(2), movement.toString(), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(1), EventType.closed.toString(), OCCUPIED);
 
         List<PlaceStatus> result = getCurrentStatusForAllPlaces(Optional.empty());
@@ -192,7 +190,6 @@ public class PlaceStatusControllerTest {
         assertFalse(result.stream().anyMatch(status -> status.getPlace_id() == placeId3));
     }
 
-    @Ignore
     @Test
     public void should_list_state_for_all_places_at_specific_date() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
@@ -205,69 +202,33 @@ public class PlaceStatusControllerTest {
         final Place place2 = placeTestUtil.getPlace(placeId2);
         final Place place3 = placeTestUtil.getPlace(placeId3);
 
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(3), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1).minusMinutes(3), movement.toString(), FREE);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1).minusMinutes(2), movement.toString(), FREE);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1).minusMinutes(1), closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1).minusMinutes(1), movement.toString(), OCCUPIED);
 
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(3), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(2), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1), FREE);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1).minusMinutes(3), movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1).minusMinutes(2), movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1).minusMinutes(1), movement.toString(), FREE);
 
-        List<PlaceStatus> result = getCurrentStatusForAllPlaces(Optional.of(LocalDateTime.now().minusDays(2)));
+        List<PlaceStatus> result = getCurrentStatusForAllPlaces(Optional.of(LocalDateTime.now().minusDays(1)));
         assertNotNull(result);
 
         Optional<PlaceStatus> place1Status = result.stream().filter(status -> status.getPlace_id() == placeId1).findFirst();
         assertTrue(place1Status.isPresent());
-        assertFalse(place1Status.get().isOccupied());
+        assertTrue(place1Status.get().isOccupied());
         assertEquals(place1.getLongitude(), place1Status.get().getLongitude(), LOCATION_COMPARISON_DELTA);
         assertEquals(place1.getLatitude(), place1Status.get().getLatitude(), LOCATION_COMPARISON_DELTA);
 
         Optional<PlaceStatus> place2Status = result.stream().filter(status -> status.getPlace_id() == placeId2).findFirst();
         assertTrue(place2Status.isPresent());
-        assertTrue(place2Status.get().isOccupied());
+        assertFalse(place2Status.get().isOccupied());
         assertEquals(place2.getLongitude(), place2Status.get().getLongitude(), LOCATION_COMPARISON_DELTA);
         assertEquals(place2.getLatitude(), place2Status.get().getLatitude(), LOCATION_COMPARISON_DELTA);
 
         assertFalse(result.stream().anyMatch(status -> status.getPlace_id() == placeId3));
     }
 
-    @Ignore
-    @Test
-    public void should_get_current_state_for_place() {
-        int deviceId = DeviceTestUtil.getNewDeviceId();
-        final int placeId1 = placeTestUtil.addPlace();
-        final Place place1 = placeTestUtil.getPlace(placeId1);
-
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(3), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
-
-        PlaceStatus result = getCurrentStatusForPlace(placeId1, Optional.empty());
-        assertNotNull(result);
-        assertTrue(result.isOccupied());
-        assertEquals(place1.getLongitude(), result.getLongitude(), LOCATION_COMPARISON_DELTA);
-        assertEquals(place1.getLatitude(), result.getLatitude(), LOCATION_COMPARISON_DELTA);
-    }
-
-    @Ignore
-    @Test
-    public void should_get_state_for_place_at_specific_date() {
-        int deviceId = DeviceTestUtil.getNewDeviceId();
-        final int placeId1 = placeTestUtil.addPlace();
-        final Place place1 = placeTestUtil.getPlace(placeId1);
-
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(3), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
-
-        PlaceStatus result = getCurrentStatusForPlace(placeId1, Optional.of(LocalDateTime.now().minusDays(2)));
-        assertNotNull(result);
-        assertFalse(result.isOccupied());
-        assertEquals(place1.getLongitude(), result.getLongitude(), LOCATION_COMPARISON_DELTA);
-        assertEquals(place1.getLatitude(), result.getLatitude(), LOCATION_COMPARISON_DELTA);
-    }
-
-    @Ignore
     @Test
     public void should_throw_error_for_place_with_no_events() {
         final int placeId1 = placeTestUtil.addPlace();
