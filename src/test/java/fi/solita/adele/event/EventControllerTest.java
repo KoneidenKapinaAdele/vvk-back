@@ -277,7 +277,7 @@ public class EventControllerTest {
     @Test
     public void should_not_add_new_event_with_missing_device_id() {
         try {
-            eventTestUtil.addEvent(null, placeTestUtil.addPlace(), LocalDateTime.now(), occupied, OCCUPIED);
+            eventTestUtil.addEvent(null, placeTestUtil.addPlace(), LocalDateTime.now(), occupied.toString(), OCCUPIED);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -289,7 +289,7 @@ public class EventControllerTest {
     public void should_not_add_new_event_with_missing_place_id() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         try {
-            eventTestUtil.addEvent(deviceId, null, LocalDateTime.now(), occupied, OCCUPIED);
+            eventTestUtil.addEvent(deviceId, null, LocalDateTime.now(), occupied.toString(), OCCUPIED);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
@@ -300,7 +300,7 @@ public class EventControllerTest {
     @Test
     public void should_not_add_new_event_with_missing_type() {
         try {
-            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), "", OCCUPIED);
+            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), null, OCCUPIED);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -323,7 +323,7 @@ public class EventControllerTest {
     @Test
     public void should_not_add_new_event_with_missing_value() {
         try {
-            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), occupied, null);
+            eventTestUtil.addEvent(DeviceTestUtil.getNewDeviceId(), placeTestUtil.addPlace(), LocalDateTime.now(), occupied.toString(), null);
             fail();
         } catch (HttpClientErrorException ex) {
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());

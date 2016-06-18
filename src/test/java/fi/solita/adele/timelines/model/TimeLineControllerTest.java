@@ -62,8 +62,8 @@ public class TimeLineControllerTest {
     public void should_be_occupied_if_movement_after_door_closed() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(5, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, startTime, closed, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement.toString(), OCCUPIED);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
 
@@ -79,9 +79,9 @@ public class TimeLineControllerTest {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(5, MINUTES);
         LocalDateTime endTime = startTime.plusMinutes(4);
-        eventTestUtil.addEvent(deviceId, placeId, startTime, closed, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, endTime, closed, FREE);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, endTime, closed.toString(), FREE);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
 
@@ -97,8 +97,8 @@ public class TimeLineControllerTest {
     public void should_set_back_free_if_no_movement_for_certain_minutes() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(15, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, startTime, closed, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement.toString(), OCCUPIED);
         LocalDateTime endTime = startTime.plusMinutes(1 + TimeLineResolver.MAX_OCCUPIED_IF_NO_MOVEMENT);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
@@ -115,10 +115,10 @@ public class TimeLineControllerTest {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(10, MINUTES);
         LocalDateTime endTime = now.minus(5, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, startTime, closed, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(2), movement, FREE);
-        eventTestUtil.addEvent(deviceId, placeId, endTime, closed, FREE);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(1), movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusMinutes(2), movement.toString(), FREE);
+        eventTestUtil.addEvent(deviceId, placeId, endTime, closed.toString(), FREE);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, 60);
 
@@ -154,7 +154,7 @@ public class TimeLineControllerTest {
     public void should_calculate_correct_time_line_with_usage_not_ending_in_time_frame() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.minus(10, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, startTime, closed, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, now.minus(7, MINUTES), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, now.minus(4, MINUTES), OCCUPIED);
 
@@ -173,7 +173,7 @@ public class TimeLineControllerTest {
         int timeFrame = 60;
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime endTime = now.minus(5, MINUTES);
-        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), closed, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(timeFrame + 5, MINUTES), closed.toString(), OCCUPIED);
         eventTestUtil.addEvent(deviceId, placeId, endTime, FREE);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now, timeFrame);
@@ -219,8 +219,8 @@ public class TimeLineControllerTest {
     @Test
     public void should_show_free_in_the_future_when_occupied_in_present() {
         LocalDateTime now = LocalDateTime.now();
-        eventTestUtil.addEvent(deviceId, placeId, now.minus(5, MINUTES), closed, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, now.minus(3, MINUTES), movement, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(5, MINUTES), closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, now.minus(3, MINUTES), movement.toString(), OCCUPIED);
 
         List<TimeLine> timeLines = getRanges(Optional.empty(), Optional.of(new Integer[]{placeId}), now.plusMinutes(60), 10);
 
@@ -245,9 +245,9 @@ public class TimeLineControllerTest {
         if (startTime.isAfter(endTime)) {
             throw new IllegalArgumentException("Start time cannot be after end time");
         }
-        eventTestUtil.addEvent(deviceId, placeId, startTime, closed, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, startTime.plusSeconds(3), movement, OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId, endTime, closed, FREE);
+        eventTestUtil.addEvent(deviceId, placeId, startTime, closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, startTime.plusSeconds(3), movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId, endTime, closed.toString(), FREE);
     }
 
     private List<TimeLine> getRanges(Optional<Object> device_id, Optional<Integer[]> place_id, LocalDateTime ending, int minutes) {
