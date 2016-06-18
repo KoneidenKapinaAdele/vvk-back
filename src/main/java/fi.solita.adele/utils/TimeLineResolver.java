@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fi.solita.adele.utils.DoorStatusResolver.isClosed;
 import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
 import static fi.solita.adele.utils.StatisticsUtils.getStartStatusForPlaceId;
 
@@ -35,13 +36,13 @@ public class TimeLineResolver {
 
         List<Event> eventsForPlace = getEventsForPlace(place_id, events);
         for (Event event : eventsForPlace) {
-            if (event.getType().equals(EventType.movement)) {
+            if (event.getType() == (EventType.movement)) {
                 boolean movement = OccupiedStatusSolver.isOccupied(event.getType(), event.getValue());
                 if (movement && doorClosed && tempRange.getStartTime() == null) {
                     tempRange.setStartTime(doorClosedTime);
                 }
-            } else {
-                if (event.getValue() == 1) {
+            } else if (event.getType() == EventType.closed) {
+                if (isClosed(event.getValue())){
                     doorClosed = true;
                     doorClosedTime = event.getTime();
                 } else {
@@ -52,7 +53,6 @@ public class TimeLineResolver {
                         tempRange = new Range();
                     }
                 }
-
             }
             int nextEvent = eventsForPlace.indexOf(event) + 1;
             if (occupationShouldTimeOut(ending, eventsForPlace, event, nextEvent)) {

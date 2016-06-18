@@ -1,12 +1,12 @@
 package fi.solita.adele.place.status;
 
+import com.google.common.collect.Lists;
 import fi.solita.adele.event.Event;
 import fi.solita.adele.event.EventRepository;
 import fi.solita.adele.event.EventType;
 import fi.solita.adele.event.OccupiedStatusSolver;
 import fi.solita.adele.place.Place;
 import fi.solita.adele.place.PlaceRepository;
-import fi.solita.adele.utils.StatusUtil;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -15,9 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static fi.solita.adele.event.EventType.closed;
+import static fi.solita.adele.event.EventType.movement;
+import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
+import static fi.solita.adele.utils.StatusUtil.getPlaceStatus;
+import static java.util.stream.Collectors.toList;
 
 @Repository
 public class PlaceStatusRepository {
@@ -59,21 +64,25 @@ public class PlaceStatusRepository {
     private List<PlaceStatus> getCurrentStatusForPlaces(final Optional<Integer[]> placeIds, final Optional<LocalDateTime> atDate) {
         LocalDateTime now = atDate.isPresent() ? atDate.get() : LocalDateTime.now();
         Optional<LocalDateTime> starting = Optional.of(now.minusHours(1));
-        Optional<LocalDateTime> ending = Optional.of(now);
         List<Event> events = eventRepository.all(starting,
-                                                 ending,
+                                                 Optional.of(now),
                                                  Optional.<Integer[]>empty(),
                                                  placeIds,
-                                                 Optional.of(new EventType[]{EventType.movement, EventType.closed}));
+                                                 Optional.of(new EventType[]{movement, closed}));
 
-        List<PlaceStatus> statuses = new ArrayList<>();
-        for (Integer place_id : placeIds.orElse(allPlaces())) {
-            Optional<PlaceStatus> status = StatusUtil.getPlaceStatus(starting, events, place_id);
-            status.ifPresent(s -> setFreeIfLongTimeWithNoEvents(now, s));
-            status.ifPresent(s -> setPlaceInformation(place_id, s));
-            status.ifPresent(statuses::add);
-        }
-        return statuses;
+        return Lists.newArrayList(placeIds.orElse(allPlaces()))
+                    .stream()
+                    .map(place -> getStatusForPlace(now, starting.get(), events, place))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(toList());
+    }
+
+    private Optional<PlaceStatus> getStatusForPlace(LocalDateTime now, LocalDateTime starting, List<Event> events, Integer place_id) {
+        Optional<PlaceStatus> status = getPlaceStatus(starting, getEventsForPlace(place_id, events));
+        status.ifPresent(s -> setFreeIfLongTimeWithNoEvents(now, s));
+        status.ifPresent(s -> setPlaceInformation(place_id, s));
+        return status;
     }
 
     private void setFreeIfLongTimeWithNoEvents(LocalDateTime now, PlaceStatus status) {

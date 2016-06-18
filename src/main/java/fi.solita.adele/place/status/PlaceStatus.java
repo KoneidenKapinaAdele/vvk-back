@@ -45,6 +45,12 @@ public class PlaceStatus {
         return this;
     }
 
+    public PlaceStatus setOccupied(boolean occupied, LocalDateTime lastEventTime) {
+        this.occupied = occupied;
+        this.lastEventTime = lastEventTime;
+        return this;
+    }
+
     public LocalDateTime getLastEventTime() {
         return lastEventTime;
     }
