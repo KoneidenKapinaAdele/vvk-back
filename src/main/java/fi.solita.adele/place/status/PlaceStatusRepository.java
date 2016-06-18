@@ -6,6 +6,7 @@ import fi.solita.adele.event.EventType;
 import fi.solita.adele.event.OccupiedStatusSolver;
 import fi.solita.adele.place.Place;
 import fi.solita.adele.place.PlaceRepository;
+import fi.solita.adele.utils.StatusUtil;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -17,8 +18,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
 
 @Repository
 public class PlaceStatusRepository {
@@ -69,50 +68,25 @@ public class PlaceStatusRepository {
 
         List<PlaceStatus> statuses = new ArrayList<>();
         for (Integer place_id : placeIds.orElse(allPlaces())) {
-            Optional<PlaceStatus> status = getPlaceStatus(starting, events, place_id);
-            if (status.isPresent() && status.get().getLastEventTime().isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
-                status.get().setOccupied(false);
-            }
+            Optional<PlaceStatus> status = StatusUtil.getPlaceStatus(starting, events, place_id);
+            status.ifPresent(s -> setFreeIfLongTimeWithNoEvents(now, s));
+            status.ifPresent(s -> setPlaceInformation(place_id, s));
             status.ifPresent(statuses::add);
         }
         return statuses;
     }
 
-    private Optional<PlaceStatus> getPlaceStatus(Optional<LocalDateTime> starting, List<Event> events, Integer place_id) {
-        List<Event> eventsForPlace = getEventsForPlace(place_id, events);
-        if (eventsForPlace.isEmpty()) {
-            return Optional.empty();
+    private void setFreeIfLongTimeWithNoEvents(LocalDateTime now, PlaceStatus status) {
+        if (status.getLastEventTime().isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
+            status.setOccupied(false);
         }
-        boolean doorClosed = false;
-        PlaceStatus status = new PlaceStatus();
-        status.setLastEventTime(starting.get());
-        status.setOccupied(false);
+    }
 
-        for (Event event : eventsForPlace) {
-            if (event.getType() == EventType.closed) {
-                if (event.getValue() == 1) {
-                    doorClosed = true;
-                } else {
-                    doorClosed = false;
-                }
-                if (status.isOccupied()) {
-                    status.setOccupied(false);
-                    status.setLastEventTime(event.getTime());
-                }
-            } else {
-                if (event.getValue() == 1) {
-                    if (doorClosed) {
-                        status.setOccupied(true);
-                        status.setLastEventTime(event.getTime());
-                    }
-                }
-            }
-        }
+    private void setPlaceInformation(Integer place_id, PlaceStatus status) {
         status.setPlace_id(place_id);
         Place place = placeRepository.getPlace(place_id);
         status.setLatitude(place.getLatitude());
         status.setLongitude(place.getLongitude());
-        return Optional.of(status);
     }
 
     private Integer[] allPlaces() {
