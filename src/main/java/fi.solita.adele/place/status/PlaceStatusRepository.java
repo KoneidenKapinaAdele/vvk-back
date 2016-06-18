@@ -69,27 +69,26 @@ public class PlaceStatusRepository {
 
         List<PlaceStatus> statuses = new ArrayList<>();
         for (Integer place_id : placeIds.orElse(allPlaces())) {
-            PlaceStatus status = getPlaceStatus(starting, events, place_id);
-            if (status.getLastEventTime().isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
-                status.setOccupied(false);
+            Optional<PlaceStatus> status = getPlaceStatus(starting, events, place_id);
+            if (status.isPresent() && status.get().getLastEventTime().isBefore(now.minusMinutes(MAX_OCCUPATION_WITH_NO_MOVEMENT))) {
+                status.get().setOccupied(false);
             }
-            status.setPlace_id(place_id);
-            Place place = placeRepository.getPlace(place_id);
-            status.setLatitude(place.getLatitude());
-            status.setLongitude(place.getLongitude());
-            statuses.add(status);
+            status.ifPresent(statuses::add);
         }
         return statuses;
     }
 
-    private PlaceStatus getPlaceStatus(Optional<LocalDateTime> starting, List<Event> events, Integer place_id) {
+    private Optional<PlaceStatus> getPlaceStatus(Optional<LocalDateTime> starting, List<Event> events, Integer place_id) {
+        List<Event> eventsForPlace = getEventsForPlace(place_id, events);
+        if (eventsForPlace.isEmpty()) {
+            return Optional.empty();
+        }
         boolean doorClosed = false;
-
         PlaceStatus status = new PlaceStatus();
         status.setLastEventTime(starting.get());
         status.setOccupied(false);
 
-        for (Event event : getEventsForPlace(place_id, events)) {
+        for (Event event : eventsForPlace) {
             if (event.getType() == EventType.closed) {
                 if (event.getValue() == 1) {
                     doorClosed = true;
@@ -109,7 +108,11 @@ public class PlaceStatusRepository {
                 }
             }
         }
-        return status;
+        status.setPlace_id(place_id);
+        Place place = placeRepository.getPlace(place_id);
+        status.setLatitude(place.getLatitude());
+        status.setLongitude(place.getLongitude());
+        return Optional.of(status);
     }
 
     private Integer[] allPlaces() {

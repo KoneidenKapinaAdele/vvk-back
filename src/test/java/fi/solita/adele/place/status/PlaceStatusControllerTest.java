@@ -4,6 +4,7 @@ import fi.solita.adele.App;
 import fi.solita.adele.DeviceTestUtil;
 import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
+import fi.solita.adele.event.EventType;
 import fi.solita.adele.place.Place;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -154,7 +155,6 @@ public class PlaceStatusControllerTest {
     }
 
 
-    @Ignore
     @Test
     public void should_list_current_state_for_all_places() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
@@ -167,13 +167,12 @@ public class PlaceStatusControllerTest {
         final Place place2 = placeTestUtil.getPlace(placeId2);
         final Place place3 = placeTestUtil.getPlace(placeId3);
 
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(3), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(2), FREE);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusDays(1), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(2), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(1), EventType.movement.toString(), OCCUPIED);
 
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(3), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(2), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusDays(1), FREE);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(3), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(2), EventType.movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId2, LocalDateTime.now().minusMinutes(1), EventType.closed.toString(), OCCUPIED);
 
         List<PlaceStatus> result = getCurrentStatusForAllPlaces(Optional.empty());
         assertNotNull(result);
