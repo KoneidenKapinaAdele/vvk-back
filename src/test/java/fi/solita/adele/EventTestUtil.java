@@ -32,13 +32,7 @@ public class EventTestUtil {
     }
 
     public List<Event> getAllEvents() {
-        return getAllEvents(
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
-        );
+        return getAllEvents(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public List<Event> getAllEvents(Optional<LocalDateTime> starting,
@@ -65,14 +59,19 @@ public class EventTestUtil {
     }
 
     public ResponseEntity<Integer> addEvent(Integer deviceId, Integer placeId, LocalDateTime time, Double value) {
-        return addEvent(deviceId, placeId, time, EventType.movement.toString(), value);
+        return addEvent(deviceId, placeId, time, EventType.movement, value);
     }
 
+
     public ResponseEntity<Integer> addEvent(Integer deviceId, Integer placeId, LocalDateTime time, String type, Double value) {
+        return addEvent(deviceId, placeId, time, type.toString(), value);
+    }
+
+    public ResponseEntity<Integer> addEvent(Integer deviceId, Integer placeId, LocalDateTime time, EventType type, Double value) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String json = getJson(deviceId, placeId, time, type, value);
+        String json = getJson(deviceId, placeId, time, type.toString(), value);
         HttpEntity<String> entity = new HttpEntity<String>(json, headers);
 
         return restTemplate.postForEntity(url("/v1/event"), entity, Integer.class);

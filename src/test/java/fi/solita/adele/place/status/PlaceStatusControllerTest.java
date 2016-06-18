@@ -4,7 +4,6 @@ import fi.solita.adele.App;
 import fi.solita.adele.DeviceTestUtil;
 import fi.solita.adele.EventTestUtil;
 import fi.solita.adele.PlaceTestUtil;
-import fi.solita.adele.event.EventType;
 import fi.solita.adele.place.Place;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -28,6 +27,8 @@ import java.util.Optional;
 import static fi.solita.adele.EventTestUtil.FREE;
 import static fi.solita.adele.EventTestUtil.OCCUPIED;
 import static fi.solita.adele.PlaceTestUtil.LOCATION_COMPARISON_DELTA;
+import static fi.solita.adele.event.EventType.closed;
+import static fi.solita.adele.event.EventType.movement;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -70,11 +71,11 @@ public class PlaceStatusControllerTest {
     public void should_be_occupied_if_movement_after_closing_door() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         final int placeId1 = placeTestUtil.addPlace();
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), closed, OCCUPIED);
         eventTestUtil.addEvent(deviceId,
                                placeId1,
                                LocalDateTime.now().minusMinutes(1),
-                               EventType.movement.toString(),
+                               movement,
                                OCCUPIED);
 
         PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
@@ -87,17 +88,17 @@ public class PlaceStatusControllerTest {
     public void should_set_free_after_opening_door() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         final int placeId1 = placeTestUtil.addPlace();
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), EventType.closed.toString(),
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), closed,
                                OCCUPIED);
         eventTestUtil.addEvent(deviceId,
                                placeId1,
                                LocalDateTime.now().minusMinutes(2),
-                               EventType.movement.toString(),
+                               movement,
                                OCCUPIED);
         eventTestUtil.addEvent(deviceId,
                                placeId1,
                                LocalDateTime.now().minusMinutes(1),
-                               EventType.closed.toString(),
+                               closed,
                                FREE);
 
         PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
@@ -110,7 +111,7 @@ public class PlaceStatusControllerTest {
     public void should_not_set_place_occupied_if_no_movement_after_closing_door() {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         final int placeId1 = placeTestUtil.addPlace();
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(3), closed, OCCUPIED);
 
         PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
 
@@ -123,8 +124,8 @@ public class PlaceStatusControllerTest {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         final int placeId1 = placeTestUtil.addPlace();
         int maxOccupationWithNoMovement = 10;
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 5), EventType.closed.toString(), OCCUPIED);
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 3), EventType.movement.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 5), closed, OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 3), movement, OCCUPIED);
 
         PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
 
@@ -137,11 +138,11 @@ public class PlaceStatusControllerTest {
         int deviceId = DeviceTestUtil.getNewDeviceId();
         final int placeId1 = placeTestUtil.addPlace();
         int maxOccupationWithNoMovement = 10;
-        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 5), EventType.closed.toString(), OCCUPIED);
+        eventTestUtil.addEvent(deviceId, placeId1, LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 5), closed, OCCUPIED);
         eventTestUtil.addEvent(deviceId,
                                placeId1,
                                LocalDateTime.now().minusMinutes(maxOccupationWithNoMovement + 3),
-                               EventType.movement.toString(),
+                               movement,
                                OCCUPIED);
 
         PlaceStatus placeStatus = getCurrentStatusForPlace(placeId1, Optional.empty());
