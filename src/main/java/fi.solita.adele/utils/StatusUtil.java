@@ -1,13 +1,16 @@
 package fi.solita.adele.utils;
 
 import fi.solita.adele.event.Event;
-import fi.solita.adele.event.EventType;
 import fi.solita.adele.place.status.PlaceStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static fi.solita.adele.event.EventType.closed;
+import static fi.solita.adele.event.EventType.movement;
+import static fi.solita.adele.event.OccupiedStatusSolver.isOccupied;
+import static fi.solita.adele.utils.DoorStatusResolver.isClosed;
 import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
 
 public class StatusUtil {
@@ -22,14 +25,14 @@ public class StatusUtil {
         status.setOccupied(false);
 
         for (Event event : eventsForPlace) {
-            if (event.getType() == EventType.closed) {
-                doorClosed = event.getValue() == 1;
+            if (event.getType() == closed) {
+                doorClosed = isClosed(event.getValue());
                 if (status.isOccupied()) {
                     status.setOccupied(false);
                     status.setLastEventTime(event.getTime());
                 }
-            } else {
-                if (event.getValue() == 1) {
+            } else if (event.getType() == movement){
+                if (isOccupied(movement, event.getValue())) {
                     if (doorClosed) {
                         status.setOccupied(true);
                         status.setLastEventTime(event.getTime());
@@ -39,4 +42,6 @@ public class StatusUtil {
         }
         return Optional.of(status);
     }
+
+
 }
