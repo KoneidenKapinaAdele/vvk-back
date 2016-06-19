@@ -2,74 +2,64 @@ package fi.solita.adele.utils;
 
 import com.google.common.collect.Lists;
 import fi.solita.adele.event.Event;
-import fi.solita.adele.event.EventType;
-import fi.solita.adele.event.OccupiedStatusSolver;
-import fi.solita.adele.place.status.PlaceStatus;
 import fi.solita.adele.timelines.model.Range;
 import fi.solita.adele.timelines.model.TimeLine;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import static fi.solita.adele.event.OccupiedStatusSolver.isOccupied;
 import static fi.solita.adele.utils.DoorStatusResolver.isClosed;
-import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
-import static fi.solita.adele.utils.StatisticsUtils.getStartStatusForPlaceId;
 
 public class TimeLineResolver {
 
     public static final int MAX_OCCUPIED_IF_NO_MOVEMENT = 10;
 
-    public static TimeLine resolveTimeLineForPlace(LocalDateTime starting, LocalDateTime ending, List<PlaceStatus> startStatusForPlaces, List<Event> events, Integer place_id) {
+    public static TimeLine resolveTimeLineForPlace(LocalDateTime starting, LocalDateTime ending, Boolean startStatusForPlace, List<Event> eventsForPlace, Integer place_id) {
         LocalDateTime now = LocalDateTime.now();
         if (starting.isAfter(now)) {
             return new TimeLine(place_id, Lists.newArrayList());
         }
-        boolean doorClosed = getStartStatusForPlaceId(place_id, startStatusForPlaces).orElse(false);
+        boolean doorClosed = startStatusForPlace;
         LocalDateTime doorClosedTime = starting;
+        Optional<LocalDateTime> rangeStartTime = doorClosed ? Optional.of(doorClosedTime) : Optional.empty();
 
         List<Range> ranges = new ArrayList<>();
-        Range tempRange = new Range();
-        if (doorClosed) {
-            tempRange.setStartTime(starting);
-        }
-
-        List<Event> eventsForPlace = getEventsForPlace(place_id, events);
         for (Event event : eventsForPlace) {
-            if (event.getType() == (EventType.movement)) {
-                boolean movement = OccupiedStatusSolver.isOccupied(event.getType(), event.getValue());
-                if (movement && doorClosed && tempRange.getStartTime() == null) {
-                    tempRange.setStartTime(doorClosedTime);
-                }
-            } else if (event.getType() == EventType.closed) {
-                if (isClosed(event.getValue())){
-                    doorClosed = true;
-                    doorClosedTime = event.getTime();
-                } else {
-                    doorClosed = false;
-                    if (tempRange.getStartTime() != null) {
-                        tempRange.setEndTime(event.getTime());
-                        ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
-                        tempRange = new Range();
+            switch (event.getType()) {
+                case movement:
+                    boolean occupied = doorClosed && isOccupied(event.getType(), event.getValue());
+                    if (occupied && !rangeStartTime.isPresent()) {
+                        rangeStartTime = Optional.of(doorClosedTime);
                     }
-                }
+                    break;
+                case closed:
+                    doorClosed = isClosed(event.getValue());
+                    if (doorClosed) {
+                        doorClosedTime = event.getTime();
+                    } else {
+                        if (rangeStartTime.isPresent()) {
+                            ranges.add(new Range(rangeStartTime.get(), event.getTime()));
+                            rangeStartTime = Optional.empty();
+                        }
+                    }
+                    break;
             }
-            int nextEvent = eventsForPlace.indexOf(event) + 1;
-            if (occupationShouldTimeOut(ending, eventsForPlace, event, nextEvent)) {
-                if (tempRange.getStartTime() != null) {
-                    tempRange.setEndTime(event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT));
-                    ranges.add(new Range(tempRange.getStartTime(), tempRange.getEndTime()));
-                    tempRange = new Range();
-                }
+            if (occupationShouldTimeOut(ending, eventsForPlace, event) && rangeStartTime.isPresent()) {
+                ranges.add(new Range(rangeStartTime.get(), event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT)));
+                rangeStartTime = Optional.empty();
             }
         }
-        if (tempRange.getStartTime() != null) {
-            ranges.add(new Range(tempRange.getStartTime(), ending.isAfter(now) ? now : ending));
+        if (rangeStartTime.isPresent()) {
+            ranges.add(new Range(rangeStartTime.get(), ending.isAfter(now) ? now : ending));
         }
         return new TimeLine(place_id, ranges);
     }
 
-    private static boolean occupationShouldTimeOut(LocalDateTime ending, List<Event> eventsForPlace, Event event, int nextEvent) {
+    private static boolean occupationShouldTimeOut(LocalDateTime ending, List<Event> eventsForPlace, Event event) {
+        int nextEvent = eventsForPlace.indexOf(event) + 1;
         LocalDateTime shouldTimeOut = event.getTime().plusMinutes(MAX_OCCUPIED_IF_NO_MOVEMENT);
         boolean nextEventIsMaxTimeFromNow = nextEvent < eventsForPlace.size() && eventsForPlace.get(nextEvent)
                                                                                        .getTime()

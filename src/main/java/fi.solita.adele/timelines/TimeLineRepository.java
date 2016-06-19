@@ -8,7 +8,6 @@ import fi.solita.adele.place.PlaceRepository;
 import fi.solita.adele.place.status.PlaceStatus;
 import fi.solita.adele.place.status.PlaceStatusRepository;
 import fi.solita.adele.timelines.model.TimeLine;
-import fi.solita.adele.utils.TimeLineResolver;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +18,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static fi.solita.adele.utils.StatisticsUtils.getEventsForPlace;
+import static fi.solita.adele.utils.StatisticsUtils.getStartStatusForPlaceId;
+import static fi.solita.adele.utils.TimeLineResolver.resolveTimeLineForPlace;
 
 @Repository
 public class TimeLineRepository {
@@ -55,11 +58,11 @@ public class TimeLineRepository {
                                                                 Optional.of(new EventType[]{EventType.movement, EventType.closed}));
         return Arrays.asList(place_ids)
                      .stream()
-                     .map(place_id -> TimeLineResolver.resolveTimeLineForPlace(starting,
-                                                                               ending,
-                                                                               startStatusesForPlaces,
-                                                                               allEvents,
-                                                                               place_id))
+                     .map(place_id -> resolveTimeLineForPlace(starting,
+                                                              ending,
+                                                              getStartStatusForPlaceId(place_id, startStatusesForPlaces).orElse(false),
+                                                              getEventsForPlace(place_id, allEvents),
+                                                              place_id))
                      .collect(Collectors.toList());
     }
 }
